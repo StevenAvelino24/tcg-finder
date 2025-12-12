@@ -2,12 +2,11 @@
 liip_imagine:
     # valid drivers options include "gd" or "gmagick" or "imagick"
     driver: "gd"
+    default_filter_set_settings:
+        format: webp
 
     filter_sets:
         shop_thumb:
-            quality: 80
+            quality: 75
             filters:
-                thumbnail:
-                    size: [300, 300]
-                    mode: outbound
-                format: webp
+                thumbnail: { size: [300, 300], mode: outbound }
