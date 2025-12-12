@@ -12,7 +12,7 @@ RUN apt-get update \
 
 # 2. Install PHP Extensions (for PostgreSQL)
 # The FrankenPHP base image provides a script for easy extension installation.
-RUN install-php-extensions pdo_pgsql zip
+RUN install-php-extensions pdo_pgsql zip gd
 
 COPY . /app
 
