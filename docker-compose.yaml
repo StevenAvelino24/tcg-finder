@@ -1,0 +1,96 @@
+# Define shared networks for services
+networks:
+  symfony_net:
+    driver: bridge
+
+# Define shared volumes for persistent data
+volumes:
+  db_data:
+  es_data:
+
+services:
+  # ----------------------------------------------------------------------
+  # 1. APP SERVICE (FrankenPHP/Symfony Worker Mode)
+  # ----------------------------------------------------------------------
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: symfony_frankenphp_app
+    restart: unless-stopped
+    ports:
+      # Expose default HTTP/S ports used by FrankenPHP
+      - '8080:80'
+      - '8443:443'
+      - '8443:443/udp' # For HTTP/3
+
+    # Mount the local source code into the container
+    volumes:
+      - .:/app
+    networks:
+      - symfony_net
+    depends_on:
+      - db
+      - es
+    # Ensures the container waits for DB and ES before attempting to connect
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://127.0.0.1']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ----------------------------------------------------------------------
+  # 2. POSTGRESQL DATABASE SERVICE
+  # ----------------------------------------------------------------------
+  db:
+    image: postgres:16-alpine
+    container_name: symfony_postgres_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: symfony_db
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    networks:
+      - symfony_net
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ----------------------------------------------------------------------
+  # 3. ELASTICSEARCH SERVICE
+  # ----------------------------------------------------------------------
+  es:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.12.0 # Use a specific, recent 8.x version
+    container_name: symfony_elasticsearch
+    restart: unless-stopped
+    environment:
+      # Required settings for single-node development
+      - node.name=es
+      - cluster.name=symfony-cluster
+      - discovery.type=single-node
+      # Set basic security for development (user: elastic, pass: changeme)
+      - xpack.security.enabled=true
+      - ELASTIC_PASSWORD=changeme
+      - http.host=0.0.0.0
+      - transport.host=0.0.0.0
+      # Allow memory locking
+      - bootstrap.memory_lock=true
+      # Set JVM heap size for development (adjust in production)
+      - 'ES_JAVA_OPTS=-Xms512m -Xmx512m'
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+    networks:
+      - symfony_net
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://elastic:changeme@localhost:9200/_cat/health | grep -q green"]
+      interval: 10s
+      timeout: 5s
+      retries: 5

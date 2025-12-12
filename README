@@ -1,0 +1,41 @@
+## Install process
+
+Build the Docker containers and run them
+
+```
+docker-compose build
+
+docker-compose up -d
+```
+
+Create the database and run the migrations
+
+```
+docker-compose exec app php bin/console doctrine:database:create
+
+docker-compose exec app php bin/console make:migration:migrate
+```
+
+Create the keys to create JWT tokens
+
+```
+docker-compose exec app php bin/console lexik:jwt:generate-keypair
+```
+
+### Possible issues
+
+If you have issues with the SSL certificate locally
+
+Copy the cert from the frankenphp container :
+
+```
+docker compose cp app:/data/caddy/pki/authorities/local/root.crt ./caddy_root_ca.crt
+```
+
+Copy the cert into the known ssl certificates on the local machine
+
+```
+sudo cp ./caddy_root_ca.crt /usr/local/share/ca-certificates/caddy_root_ca.crt
+sudo update-ca-certificates
+```
+

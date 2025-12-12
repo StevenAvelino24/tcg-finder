@@ -1,0 +1,15 @@
+auth:
+    email:
+        not_blank: L'email est requis.
+        wrong_format: L'email n'a pas le bon format.
+    password:
+        not_blank: Le mot de passe est requis.
+        not_strong: Le mot de passe doit contenir au moins 8 caractères.
+    register:
+        bad_request: Une erreur est survenue, le contenu de la requête n'est pas correct.
+        form_not_valid: Les données du formulaire ne sont pas valides.
+        user_exists: L'email est déjà utilisé.
+        success: L'utilisateur a bien été créé, vous pouvez vous connecter avec votre adresse email.
+    user:
+        not_found: Utilisateur non trouvé.
+  

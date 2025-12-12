@@ -1,0 +1,31 @@
+{
+    frankenphp {
+        worker {
+            file /app/public/index.php
+            watch /app
+        }
+    }
+}
+:80, :443 {
+    # Set the root directory of the Symfony application
+    root * /app/public
+
+    # This configuration relies on the FRANKENPHP_CONFIG
+    # environment variable set in docker-compose.yml to run
+    # the PHP worker.
+
+    # Serve static files and fallback to the worker
+    file_server
+
+    # Fallback to php_server which will use the worker mode
+    # defined by the FRANKENPHP_CONFIG env var.
+    php_server {
+        watch /app
+    }
+
+    # Standard Caddy features
+    encode zstd gzip
+
+    # Enable CORS for development
+    header Access-Control-Allow-Origin "*"
+}
