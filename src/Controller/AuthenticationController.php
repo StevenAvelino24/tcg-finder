@@ -2,94 +2,75 @@
 
 namespace App\Controller;
 
+use App\DTO\User\CreateUserDTO;
+use App\DTO\User\DetailUserDTO;
+use App\DTO\User\UpdateUserDTO;
 use App\Entity\User;
+use App\Service\User\UserServiceInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
-use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
-use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Component\Security\Http\Attribute\IsGranted;
-use Symfony\Component\Serializer\SerializerInterface;
-use Symfony\Component\Validator\Validator\ValidatorInterface;
-use Symfony\Contracts\Translation\TranslatorInterface;
+use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
+use Symfony\Component\Routing\Attribute\Route;
 
 #[Route('/api', name: 'auth_')]
-class AuthenticationController extends AbstractController
+final class AuthenticationController extends AbstractController
 {
     #[Route('/register', name: 'register', methods: ['POST'])]
     public function register(
-        Request $request,
-        UserPasswordHasherInterface $passwordHasher,
-        EntityManagerInterface $entityManager,
-        SerializerInterface $serializer,
-        ValidatorInterface $validator,
-        TranslatorInterface $translator
+        #[MapRequestPayload()] CreateUserDTO $dto,
+        UserServiceInterface $userService,
+        EntityManagerInterface $entityManager
     ): JsonResponse
     {
-        try {
-            $user = $serializer->deserialize($request->getContent(), User::class, 'json');
-            
-            $data = json_decode($request->getContent(), true);
-            if (!isset($data['password'])) {
-                 return new JsonResponse(['message' => $translator->trans('auth.password.not_blank')], Response::HTTP_BAD_REQUEST);
-            }
-            $user->setPlainPassword($data['password']);
-
-        } catch (\Exception $e) {
-            return new JsonResponse(['message' => $translator->trans('auth.register.bad_request')], Response::HTTP_BAD_REQUEST);
-        }
-
-        $errors = $validator->validate($user); 
-
-        if (count($errors) > 0) {
-            $errorMessages = [];
-            foreach ($errors as $error) {
-                $errorMessages[$error->getPropertyPath()][] = $error->getMessage();
-            }
-
-            return new JsonResponse([
-                'message' => $translator->trans('auth.register.form_not_valid'), 
-                'errors' => $errorMessages
-            ], Response::HTTP_UNPROCESSABLE_ENTITY); 
-        }
-
-        if ($entityManager->getRepository(User::class)->findOneBy(['email' => $user->getEmail()])) {
-            return new JsonResponse(['message' => $translator->trans('auth.register.user_exists')], Response::HTTP_CONFLICT);
-        }
-        $user->setRoles(['ROLE_USER']);
-
-        $hashedPassword = $passwordHasher->hashPassword(
-            $user,
-            $user->getPlainPassword()
-        );
-        $user->setPassword($hashedPassword);
-        $user->eraseCredentials(); 
+        $user = $userService->createFromDTO($dto);
 
         $entityManager->persist($user);
         $entityManager->flush();
 
-        return new JsonResponse([
-            'message' => $translator->trans('auth.register.success'),
-            'email' => $user->getEmail(),
-        ], Response::HTTP_CREATED);
+        return $this->json(
+            DetailUserDTO::fromEntity($user),
+            Response::HTTP_CREATED
+        );
     }
 
-    #[Route('/me', name: 'me', methods: ['GET'])]
-    #[IsGranted('ROLE_USER')] 
-    public function getAuthenticatedUser(TranslatorInterface $translator): JsonResponse
+    #[Route('/backend/user', name: 'update', methods: ['PUT'])]
+    public function update(
+        #[MapRequestPayload()] UpdateUserDTO $dto,
+        UserServiceInterface $userService,
+        EntityManagerInterface $entityManager
+    ): JsonResponse {
+        /** @var User **/
+        $user = $this->getUser();
+        $userService->updateFromDTO($dto, $user);
+
+        $entityManager->flush();
+
+        return $this->json(
+            DetailUserDTO::fromEntity($user),
+            Response::HTTP_OK
+        );
+    }
+
+    #[Route('/backend/user', name: 'delete', methods: ['DELETE'])]
+    public function delete(EntityManagerInterface $entityManager): JsonResponse
     {
+        $entityManager->remove($this->getUser());
+        $entityManager->flush();
+
+        return $this->json(null, Response::HTTP_NO_CONTENT);
+    }
+
+    #[Route('/backend/user', name: 'show', methods: ['GET'])]
+    public function getAuthenticatedUser(): JsonResponse
+    {
+        /** @var User **/
         $user = $this->getUser();
 
-        if (!$user) {
-            return new JsonResponse(['message' => $translator->trans('auth.user.not_found')], Response::HTTP_UNAUTHORIZED);
-        }
-
-        return new JsonResponse([
-
-            'email' => $user->getEmail(),
-            'roles' => $user->getRoles(),
-        ]);
+        return $this->json(
+            DetailUserDTO::fromEntity($user),
+            Response::HTTP_OK
+        );
     }
 }

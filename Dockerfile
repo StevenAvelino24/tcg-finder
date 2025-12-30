@@ -1,18 +1,28 @@
 # Use the official FrankenPHP image with PHP 8.3 and Debian Bookworm base
-FROM dunglas/frankenphp:php8.3
+FROM dunglas/frankenphp:php8.4
 
-# 1. Install System Dependencies (for database and Git)
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
-        git \
-        libpq-dev \
-        libzip-dev \
-        acl \
+# Install system libraries
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git \
+    acl \
+    libpq-dev \
+    libzip-dev \
+    libpng-dev \
+    libjpeg-dev \
+    libwebp-dev \
+    libfreetype6-dev \
     && rm -rf /var/lib/apt/lists/*
+
+# Install PHP extensions (GD with WebP, PostgreSQL, Zip)
+RUN install-php-extensions \
+    gd \
+    pdo \
+    pdo_pgsql \
+    zip
 
 # 2. Install PHP Extensions (for PostgreSQL)
 # The FrankenPHP base image provides a script for easy extension installation.
-RUN install-php-extensions pdo_pgsql zip gd
+RUN install-php-extensions pdo pdo_pgsql zip
 
 COPY . /app
 

@@ -12,4 +12,28 @@ auth:
         success: L'utilisateur a bien été créé, vous pouvez vous connecter avec votre adresse email.
     user:
         not_found: Utilisateur non trouvé.
+
+shop:
+    title:
+        not_blank: Le nom est requis.
+    address:
+        not_blank: L'adresse est requise.
+    zipcode:
+        not_blank: Le Zip est requis.
+        wrong_type: Le Zip doit être un nombre entier.
+        not_positive: Le Zip doit être un nombre positif.
+    city:
+        not_blank: La ville est requise.
+    state:
+        not_blank: Le canton est requis.
+    email:
+        not_email: L'email n'a pas le bon format.
+    opening_hours:
+        not_blank: Les horaires d'ouverture sont requis.
+    longitude:
+        not_blank: Les coordonnées sur la carte sont requises.
+        wrong_type: Les coordonnées ne sont pas des nombres à virgules.
+    latitude:
+        not_blank: Les coordonnées sur la carte sont requises.
+        wrong_type: Les coordonnées ne sont pas des nombres à virgules.
   
