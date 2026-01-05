@@ -49,7 +49,7 @@ class Shop
     #[ORM\Column(type: 'text', nullable: true)]
     private ?string $openingHours;
 
-     #[ORM\OneToMany(
+    #[ORM\OneToMany(
         mappedBy: 'shop',
         targetEntity: Image::class,
         cascade: ['persist', 'remove'],
@@ -93,10 +93,19 @@ class Shop
     #[ORM\Column(type: 'text', nullable: true)]
     private ?string $description = null;
 
+    #[ORM\OneToMany(
+        mappedBy: 'shop',
+        targetEntity: Event::class,
+        cascade: ['persist', 'remove'],
+        orphanRemoval: true
+    )]
+    private Collection $events;
+
     public function __construct()
     {
         $this->images = new ArrayCollection();
         $this->games = new ArrayCollection();
+        $this->events = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -330,6 +339,28 @@ class Shop
     public function setDescription(?string $description): static
     {
         $this->description = $description;
+
+        return $this;
+    }
+
+    public function getEvents(): Collection
+    {
+        return $this->events;
+    }
+
+    public function addEvent(Event $event): static
+    {
+        if (!$this->events->contains($event)) {
+            $this->events[] = $event;
+            $event->setShop($this);
+        }
+
+        return $this;
+    }
+
+    public function removeEvent(Event $event): static
+    {
+        $this->events->removeElement($event);
 
         return $this;
     }

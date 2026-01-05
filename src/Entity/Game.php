@@ -23,9 +23,18 @@ class Game
     #[ORM\ManyToMany(targetEntity: Shop::class, mappedBy: 'games')]
     private Collection $shops;
 
+    #[ORM\OneToMany(
+        mappedBy: 'game',
+        targetEntity: Event::class,
+        cascade: ['persist', 'remove'],
+        orphanRemoval: true
+    )]
+    private Collection $events;
+
     public function __construct()
     {
         $this->shops = new ArrayCollection();
+        $this->events = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -65,6 +74,28 @@ class Game
         if ($this->shops->removeElement($shop)) {
             $shop->removeGame($this);
         }
+
+        return $this;
+    }
+
+    public function getEvents(): Collection
+    {
+        return $this->events;
+    }
+
+    public function addEvent(Event $event): static
+    {
+        if (!$this->events->contains($event)) {
+            $this->events[] = $event;
+            $event->setGame($this);
+        }
+
+        return $this;
+    }
+
+    public function removeEvent(Event $event): static
+    {
+        $this->events->removeElement($event);
 
         return $this;
     }
