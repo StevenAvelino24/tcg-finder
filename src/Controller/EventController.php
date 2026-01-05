@@ -39,7 +39,7 @@ final class EventController extends AbstractController
         $user = $this->getUser();
         $shop = $user->getShop();
 
-        if (!$shop->getEnabled()) {
+        if (!$shop || !$shop->getEnabled()) {
             return $this->json(null, Response::HTTP_FORBIDDEN);
         }
 
@@ -56,13 +56,18 @@ final class EventController extends AbstractController
     public function show(
         #[MapEntity(mapping: ['slug' => 'slug'])] Event $event
     ): JsonResponse {
+        $shop = $event->getShop();
+
+        if (!$shop->getEnabled()) {
+            return $this->json(null, Response::HTTP_NOT_FOUND);
+        }
+
         return $this->json(
             DetailEventDTO::fromEntity($event),
             Response::HTTP_OK
         );
     }
 
-    #[IsGranted('EVENT_CREATE', subject: 'event')]
     #[Route('/backend/events', name: 'create', methods: ['POST'])]
     public function create(
         #[MapRequestPayload()] CreateEventDTO $dto,
@@ -71,6 +76,12 @@ final class EventController extends AbstractController
     ): JsonResponse {
         /** @var User */
         $user = $this->getUser();
+        $shop = $user->getShop();
+        
+        if (!$shop || !$shop->getEnabled()) {
+            return $this->json(null, Response::HTTP_FORBIDDEN);
+        }
+
         $event = $eventService->createFromDTO($dto, $user->getShop());
 
         $entityManager->persist($event);
