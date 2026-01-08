@@ -4,14 +4,19 @@ namespace App\Controller;
 
 use App\DTO\Event\CreateEventDTO;
 use App\DTO\Event\DetailEventDTO;
+use App\DTO\Participant\CreateParticipantDTO;
+use App\DTO\Participant\DetailParticipantDTO;
 use App\Entity\Event;
 use App\Entity\User;
 use App\Repository\EventRepository;
+use App\Repository\ParticipantRepository;
 use App\Service\Event\EventServiceInterface;
+use App\Service\Participant\ParticipantServiceInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bridge\Doctrine\Attribute\MapEntity;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use Symfony\Component\Routing\Attribute\Route;
@@ -118,6 +123,51 @@ final class EventController extends AbstractController
         EntityManagerInterface $entityManager
     ): JsonResponse {
         $entityManager->remove($event);
+        $entityManager->flush();
+
+        return $this->json(null, Response::HTTP_NO_CONTENT);
+    }
+
+    #[Route('/events/{slug}/register', name: 'register', methods: ['POST'])]
+    public function register(
+        #[MapEntity(mapping: ['slug' => 'slug'])] Event $event,
+        #[MapRequestPayload] CreateParticipantDTO $dto,
+        EntityManagerInterface $entityManager,
+        ParticipantServiceInterface $participantService
+    ): JsonResponse {
+        $shop = $event->getShop();
+
+        if (!$shop->getEnabled()) {
+            return $this->json(null, Response::HTTP_FORBIDDEN);
+        }
+
+        $participant = $participantService->createFromDTO($dto, $event);
+
+        $entityManager->persist($participant);
+        $entityManager->flush();
+
+        return $this->json(DetailParticipantDTO::fromEntity($participant), Response::HTTP_CREATED);
+    }
+
+    #[Route('/events/unregister', name: 'unregister', methods: ['DELETE'])]
+    public function unregister(
+        Request $request,
+        EntityManagerInterface $entityManager,
+        ParticipantRepository $participantRepository
+    ): JsonResponse {
+        $token = $request->query->get('token');
+
+        if (!$token) {
+            return $this->json(null, Response::HTTP_FORBIDDEN);
+        }
+
+        $participant = $participantRepository->findOneBy(['unregisterToken' => $token]);
+
+        if (!$participant) {
+            return $this->json(null, Response::HTTP_FORBIDDEN);
+        }
+
+        $entityManager->remove($participant);
         $entityManager->flush();
 
         return $this->json(null, Response::HTTP_NO_CONTENT);

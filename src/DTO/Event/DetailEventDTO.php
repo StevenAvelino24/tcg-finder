@@ -3,8 +3,10 @@
 namespace App\DTO\Event;
 
 use App\DTO\Game\DetailGameDTO;
+use App\DTO\Participant\DetailParticipantDTO;
 use App\DTO\Shop\PartialDetailShopDTO;
 use App\Entity\Event;
+use App\Entity\Participant;
 use DateTimeImmutable;
 
 final class DetailEventDTO
@@ -19,7 +21,8 @@ final class DetailEventDTO
         public int $numberParticipants,
         public DateTimeImmutable $startDateTime,
         public DateTimeImmutable $endDateTime,
-        public string $slug
+        public string $slug,
+        public array $participants
     ) {}
 
     public static function fromEntity(Event $event): self
@@ -34,7 +37,11 @@ final class DetailEventDTO
             numberParticipants: $event->getNumberParticipants(),
             startDateTime: $event->getStartDateTime(),
             endDateTime: $event->getEndDateTime(),
-            slug: $event->getSlug()
+            slug: $event->getSlug(),
+            participants: array_map(
+                static fn (Participant $participant) => DetailParticipantDTO::fromEntity($participant),
+                $event->getParticipants()->toArray()
+            ),
         );
     }
 }

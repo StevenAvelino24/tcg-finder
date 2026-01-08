@@ -2,7 +2,6 @@
 
 namespace App\DTO\Event;
 
-use App\Entity\Shop;
 use DateTimeImmutable;
 use Symfony\Component\Validator\Constraints as Assert;
 

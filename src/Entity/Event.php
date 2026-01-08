@@ -4,6 +4,8 @@ namespace App\Entity;
 
 use App\Repository\EventRepository;
 use DateTimeImmutable;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
 
@@ -53,8 +55,21 @@ class Event
     #[Assert\NotNull(message: 'event.end.not_null')]
     private DateTimeImmutable $endDateTime;
 
+    #[ORM\OneToMany(
+        mappedBy: 'event',
+        targetEntity: Participant::class,
+        cascade: ['persist', 'remove'],
+        orphanRemoval: true
+    )]
+    private Collection $participants;
+
     #[ORM\Column(length: 180, unique: true)]
     private string $slug;
+
+    public function __construct()
+    {
+        $this->participants = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -177,6 +192,28 @@ class Event
     public function setEndDateTime(DateTimeImmutable $dateTime): static
     {
         $this->endDateTime = $dateTime;
+
+        return $this;
+    }
+
+    public function getParticipants(): Collection
+    {
+        return $this->participants;
+    }
+
+    public function addParticipant(Participant $participant): static
+    {
+        if (!$this->participants->contains($participant)) {
+            $this->participants[] = $participant;
+            $participant->setEvent($this);
+        }
+
+        return $this;
+    }
+
+    public function removeParticipant(Participant $participant): static
+    {
+        $this->participants->removeElement($participant);
 
         return $this;
     }

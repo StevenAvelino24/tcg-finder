@@ -5,9 +5,11 @@ namespace App\Tests\Api;
 use App\Entity\Event;
 use App\Factory\EventFactory;
 use App\Factory\GameFactory;
+use App\Factory\ParticipantFactory;
 use App\Factory\ShopFactory;
 use App\Factory\UserFactory;
 use App\Repository\EventRepository;
+use App\Repository\ParticipantRepository;
 use App\Repository\UserRepository;
 use App\Tests\AuthWebTestCase;
 use DateTimeImmutable;
@@ -20,6 +22,7 @@ final class EventControllerTest extends AuthWebTestCase
 
     private UserRepository $userRepository;
     private EventRepository $eventRepository;
+    private ParticipantRepository $participantRepository;
 
     public function setUp(): void
     {
@@ -27,6 +30,7 @@ final class EventControllerTest extends AuthWebTestCase
 
         $this->userRepository = static::getContainer()->get(UserRepository::class);
         $this->eventRepository = static::getContainer()->get(EventRepository::class);
+        $this->participantRepository = static::getContainer()->get(ParticipantRepository::class);
     }
 
     public function testListEventsReturnsErrorIfNotAdmin(): void
@@ -371,5 +375,108 @@ final class EventControllerTest extends AuthWebTestCase
 
         $event = $this->eventRepository->findOneBy(['slug' => $event->getSlug()]);
         $this->assertNull($event);
+    }
+
+    public function testRegisterEventReturnsErrorIfPayloadIsNotCorrect(): void
+    {
+        $this->authenticate('user@tcg.ch', 'Password1234', ['ROLE_USER']);
+        $user = $this->userRepository->findOneBy(['email' => 'user@tcg.ch']);
+        $shop = ShopFactory::createOne(['user' => $user, 'enabled' => true]);
+        $event = EventFactory::createOne(['shop' => $shop]);
+
+        $this->client->jsonRequest(
+            'POST',
+            '/api/events/' . $event->getSlug() . '/register',
+            ['firstName' => 'test']
+        );
+
+        $this->assertResponseStatusCodeSame(422);
+    }
+
+    public function testRegisterEventReturnsErrorIfShopIsNotEnabled(): void
+    {
+        $this->authenticate('user@tcg.ch', 'Password1234', ['ROLE_USER']);
+        $user = $this->userRepository->findOneBy(['email' => 'user@tcg.ch']);
+        $shop = ShopFactory::createOne(['user' => $user, 'enabled' => false]);
+        $event = EventFactory::createOne(['shop' => $shop]);
+
+        $this->client->jsonRequest(
+            'POST',
+            '/api/events/' . $event->getSlug() . '/register',
+            [
+                'firstName' => 'Toto',
+                'lastName' => 'Tata',
+                'email' => 'test@toto.ch'
+            ]
+        );
+
+        $this->assertResponseStatusCodeSame(403);
+    }
+
+    public function testRegisterEventReturnsSuccess(): void
+    {
+        $this->authenticate('user@tcg.ch', 'Password1234', ['ROLE_USER']);
+        $user = $this->userRepository->findOneBy(['email' => 'user@tcg.ch']);
+        $shop = ShopFactory::createOne(['user' => $user, 'enabled' => true]);
+        $event = EventFactory::createOne(['shop' => $shop]);
+
+        $this->client->jsonRequest(
+            'POST',
+            '/api/events/' . $event->getSlug() . '/register',
+            [
+                'firstName' => 'Toto',
+                'lastName' => 'Tata',
+                'email' => 'test@toto.ch'
+            ]
+        );
+
+        $this->assertResponseStatusCodeSame(201);
+
+        $data = json_decode($this->client->getResponse()->getContent(), true);
+
+        $this->assertSame([
+            'firstName' => 'Toto',
+            'lastName' => 'Tata',
+            'email' => 'test@toto.ch'
+        ], $data);
+
+        $this->assertEmailCount(1);
+    }
+
+    public function testUnregisterEventReturnsErrorIfNoTokenInQueryStrings(): void
+    {
+        $this->client->jsonRequest(
+            'DELETE',
+            '/api/events/unregister'
+        );
+
+        $this->assertResponseStatusCodeSame(403);
+    }
+
+    public function testUnregisterEventReturnsErrorIfTokenIsNotTiedToAnyParticipant(): void
+    {
+        ParticipantFactory::createOne();
+
+        $this->client->jsonRequest(
+            'DELETE',
+            '/api/events/unregister?token=toottata'
+        );
+
+        $this->assertResponseStatusCodeSame(403);
+    }
+
+    public function testUnregisterEventReturnsSuccessIfTokenTiedToParticipant(): void
+    {
+        $participant = ParticipantFactory::createOne();
+
+        $this->client->jsonRequest(
+            'DELETE',
+            '/api/events/unregister?token=' . $participant->getUnregisterToken()
+        );
+
+        $this->assertResponseStatusCodeSame(204);
+
+        $oldParticipant = $this->participantRepository->findOneBy(['email' => $participant->getEmail()]);
+        $this->assertNull($oldParticipant);
     }
 }
