@@ -2,7 +2,7 @@
 
 namespace App\Search\Index;
 
-class ShopIndex
+final class ShopIndex
 {
     public const NAME = 'shops_v1';
 
@@ -16,16 +16,27 @@ class ShopIndex
                     'city' => ['type' => 'keyword'],
                     'state' => ['type' => 'keyword'],
                     'zipcode' => ['type' => 'keyword'],
-                    'openingHours' => ['type' => 'text'],
-                    'slug' => ['type' => 'keyword'],
+                    'opening_hours' => ['type' => 'text'],
+                    'phone' => ['type' => 'text'],
+                    'email' => ['type' => 'text'],
+                    'slug' => ['type' => 'text'],
                     'location' => ['type' => 'geo_point'],
                     'games' => [
                         'type' => 'nested',
                         'properties' => [
-                            'id' => ['type' => 'keyword'],
-                            'name' => ['type' => 'text'],
+                            'name' => ['type' => 'keyword'],
                         ],
                     ],
+                    'images' => [
+                        'type' => 'nested',
+                        'properties' => [
+                            'url' => ['type' => 'text'],
+                            'alt' => ['type' => 'text'],
+                            'position' => ['type' => 'integer'],
+                        ],
+                    ],
+                    'selling' => ['type' => 'boolean'],
+                    'description' => ['type' => 'text'],
                 ],
             ],
         ];

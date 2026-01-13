@@ -7,7 +7,7 @@ use App\Search\Transformer\ShopDocumentTransformer;
 use App\Search\Index\ShopIndex;
 use Elastic\Elasticsearch\Client;
 
-class ShopIndexer
+final class ShopIndexer
 {
     public function __construct(
         private Client $client,

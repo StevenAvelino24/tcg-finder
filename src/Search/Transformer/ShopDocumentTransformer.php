@@ -2,6 +2,8 @@
 
 namespace App\Search\Transformer;
 
+use App\Entity\Game;
+use App\Entity\Image;
 use App\Entity\Shop;
 
 class ShopDocumentTransformer
@@ -15,18 +17,28 @@ class ShopDocumentTransformer
             'state' => $shop->getState(),
             'zipcode' => (string) $shop->getZipcode(),
             'openingHours' => $shop->getOpeningHours(),
+            'phone' => $shop->getPhone(),
+            'email' => $shop->getEmail(),
             'slug' => $shop->getSlug(),
+            'selling' => $shop->getSelling(),
+            'description' => $shop->getDescription(),
             'location' => [
                 'lat' => $shop->getLatitude(),
                 'lon' => $shop->getLongitude(),
             ],
             'games' => array_map(
-                fn ($game) => [
-                    'id' => (string) $game->getId(),
+                fn (Game $game) => [
                     'name' => $game->getName(),
                 ],
                 $shop->getGames()->toArray()
             ),
+            'images' => array_map(
+                fn (Image $image) => [
+                    'url' => '/uploads/shops/' . $image->getFileName(),
+                    'alt' => $image->getAlt(),
+                    'position' => $image->getPosition()
+                ],
+                $shop->getImages()->toArray())
         ];
     }
 }
