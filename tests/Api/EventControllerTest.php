@@ -11,8 +11,10 @@ use App\Factory\UserFactory;
 use App\Repository\EventRepository;
 use App\Repository\ParticipantRepository;
 use App\Repository\UserRepository;
+use App\Search\Index\EventIndex;
 use App\Tests\AuthWebTestCase;
 use DateTimeImmutable;
+use Elastic\Elasticsearch\Client;
 use Zenstruck\Foundry\Test\Factories;
 use Zenstruck\Foundry\Test\ResetDatabase;
 
@@ -23,14 +25,46 @@ final class EventControllerTest extends AuthWebTestCase
     private UserRepository $userRepository;
     private EventRepository $eventRepository;
     private ParticipantRepository $participantRepository;
+    private Client $esClient;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
 
         $this->userRepository = static::getContainer()->get(UserRepository::class);
         $this->eventRepository = static::getContainer()->get(EventRepository::class);
         $this->participantRepository = static::getContainer()->get(ParticipantRepository::class);
+        $this->esClient = static::getContainer()->get(Client::class);
+
+        if ($this->esClient->indices()->exists(['index' => EventIndex::NAME])->asBool()) {
+            $this->esClient->indices()->delete(['index' => EventIndex::NAME]);
+        }
+    }
+
+    protected function tearDown(): void
+    {
+        if ($this->esClient->indices()->exists(['index' => EventIndex::NAME])->asBool()) {
+            $this->esClient->indices()->delete(['index' => EventIndex::NAME]);
+        }
+        parent::tearDown();
+    }
+
+    protected function getAllEsEventDocuments(): array
+    {
+        $response = $this->esClient->search([
+            'index' => EventIndex::NAME,
+            'body'  => [
+                'query' => [
+                    'match_all' => (object) [],
+                ]
+            ],
+            'size' => 1000,
+        ]);
+
+        return array_map(
+            fn (array $hit) => $hit['_source'],
+            $response['hits']['hits']
+        );
     }
 
     public function testListEventsReturnsErrorIfNotAdmin(): void
@@ -225,7 +259,7 @@ final class EventControllerTest extends AuthWebTestCase
         $this->assertInstanceOf(Event::class, $event);
     }
 
-    public function testUpdateShopReturnsErrorIfNotLoggedIn(): void
+    public function testUpdateEventReturnsErrorIfNotLoggedIn(): void
     {
         $event = EventFactory::createOne();
 
@@ -238,7 +272,7 @@ final class EventControllerTest extends AuthWebTestCase
         $this->assertResponseStatusCodeSame(expectedCode: 401);
     }
 
-    public function testUpdateShopReturnsErrorIfUserIsNotShopOwner(): void
+    public function testUpdateEventReturnsErrorIfUserIsNotShopOwner(): void
     {
         $this->authenticate('user@tcg.ch', 'Password1234', ['ROLE_USER']);
         $user = UserFactory::createOne();
@@ -254,7 +288,7 @@ final class EventControllerTest extends AuthWebTestCase
         $this->assertResponseStatusCodeSame(expectedCode: 403);
     }
 
-    public function testUpdateShopReturnsErrorIfEventShopIsNotEnabled(): void
+    public function testUpdateEventReturnsErrorIfEventShopIsNotEnabled(): void
     {
         $this->authenticate('user@tcg.ch', 'Password1234', ['ROLE_USER']);
         $user = $this->userRepository->findOneBy(['email' => 'user@tcg.ch']);
@@ -270,7 +304,7 @@ final class EventControllerTest extends AuthWebTestCase
         $this->assertResponseStatusCodeSame(expectedCode: 403);
     }
 
-    public function testUpdateShopReturnsErrorIfDataIsNotValid(): void
+    public function testUpdateEventReturnsErrorIfDataIsNotValid(): void
     {
         $this->authenticate('user@tcg.ch', 'Password1234', ['ROLE_USER']);
         $user = $this->userRepository->findOneBy(['email' => 'user@tcg.ch']);
@@ -288,7 +322,7 @@ final class EventControllerTest extends AuthWebTestCase
         $this->assertResponseStatusCodeSame(expectedCode: 422);
     }
 
-    public function testUpdateShopReturnsSuccessIfDataIsValid(): void
+    public function testUpdateEventReturnsSuccessIfDataIsValid(): void
     {
         $this->authenticate('user@tcg.ch', 'Password1234', ['ROLE_USER']);
         $user = $this->userRepository->findOneBy(['email' => 'user@tcg.ch']);
@@ -317,7 +351,7 @@ final class EventControllerTest extends AuthWebTestCase
         $this->assertSame('Test Event', $event->getName());
     }
 
-    public function testDeleteShopReturnsErrorIfUserNotLoggedIn(): void
+    public function testDeleteEventReturnsErrorIfUserNotLoggedIn(): void
     {
         $event = EventFactory::createOne();
 
@@ -329,7 +363,7 @@ final class EventControllerTest extends AuthWebTestCase
         $this->assertResponseStatusCodeSame(401);
     }
 
-    public function testDeleteShopReturnsErrorIfUserNotShopOwner(): void
+    public function testDeleteEventReturnsErrorIfUserNotShopOwner(): void
     {
         $this->authenticate('user@tcg.ch', 'Password1234', ['ROLE_USER']);
         $user = UserFactory::createOne();
@@ -344,7 +378,7 @@ final class EventControllerTest extends AuthWebTestCase
         $this->assertResponseStatusCodeSame(expectedCode: 403);
     }
 
-    public function testDeleteShopReturnsErrorIfShopIsNotEnabled(): void
+    public function testDeleteEventReturnsErrorIfShopIsNotEnabled(): void
     {
         $this->authenticate('user@tcg.ch', 'Password1234', ['ROLE_USER']);
         $user = $this->userRepository->findOneBy(['email' => 'user@tcg.ch']);
@@ -359,7 +393,7 @@ final class EventControllerTest extends AuthWebTestCase
         $this->assertResponseStatusCodeSame(expectedCode: 403);
     }
 
-    public function testDeleteShopReturnsSuccessIfUserHasAccess(): void
+    public function testDeleteEventReturnsSuccessIfUserHasAccess(): void
     {
         $this->authenticate('user@tcg.ch', 'Password1234', ['ROLE_USER']);
         $user = $this->userRepository->findOneBy(['email' => 'user@tcg.ch']);
@@ -499,5 +533,108 @@ final class EventControllerTest extends AuthWebTestCase
 
         $oldParticipant = $this->participantRepository->findOneBy(['email' => $participant->getEmail()]);
         $this->assertNull($oldParticipant);
+    }
+
+    public function testCreateEventIndexesToEsProperly(): void
+    {
+        $this->authenticate('user@tcg.ch', 'Password1234', ['ROLE_USER']);
+        $user = $this->userRepository->findOneBy(['email' => 'user@tcg.ch']);
+        ShopFactory::createOne(['user' => $user, 'enabled' => true]);
+        $game = GameFactory::createOne();
+        $date = new DateTimeImmutable();
+
+        $this->client->jsonRequest(
+            'POST',
+            '/api/backend/events',
+            [
+                'name' => 'Test Event',
+                'gameId' => $game->getId(),
+                'format' => 'standard',
+                'entryCost' => "5 francs",
+                'description' => 'Test description',
+                'numberParticipants' => 10,
+                'startDateTime' => $date->format('d M Y H:i:s'),
+                'endDateTime' => $date->format('d M Y H:i:s'),
+            ]
+        );
+
+        $this->assertResponseStatusCodeSame(expectedCode: 201);
+
+        $this->esClient->indices()->refresh(['index' => EventIndex::NAME]);
+
+        $documents = $this->getAllEsEventDocuments();
+
+        $this->assertCount(1, $documents);
+        $this->assertSame('Test Event', $documents[0]['name']);
+    }
+
+    public function testUpdateEventUpdateEsDocument(): void
+    {
+        $this->authenticate('user@tcg.ch', 'Password1234', ['ROLE_USER']);
+        $user = $this->userRepository->findOneBy(['email' => 'user@tcg.ch']);
+        $shop = ShopFactory::createOne(['user' => $user, 'enabled' => true]);
+        $event = EventFactory::createOne(['shop' => $shop]);
+        $game = GameFactory::createOne();
+        $date = new DateTimeImmutable();
+
+        $this->esClient->indices()->refresh(['index' => EventIndex::NAME]);
+
+        $documents = $this->getAllEsEventDocuments();
+
+        $this->assertCount(1, $documents);
+        $this->assertSame($event->getName(), $documents[0]['name']);
+
+        $this->client->jsonRequest(
+            'PUT',
+            '/api/backend/events/' . $event->getSlug(),
+            [
+                'name' => 'Test Event',
+                'gameId' => $game->getId(),
+                'format' => 'standard',
+                'entryCost' => "5 francs",
+                'description' => 'Test description',
+                'numberParticipants' => 10,
+                'startDateTime' => $date->format('d M Y H:i:s'),
+                'endDateTime' => $date->format('d M Y H:i:s'),
+            ]
+        );
+
+        $this->assertResponseStatusCodeSame(expectedCode: 200);
+
+        $this->esClient->indices()->refresh(['index' => EventIndex::NAME]);
+
+        $documents = $this->getAllEsEventDocuments();
+
+        $this->assertCount(1, $documents);
+        $this->assertSame('Test Event', $documents[0]['name']);
+
+    }
+
+    public function testDeleteEventRemovesEsDocument(): void
+    {
+        $this->authenticate('user@tcg.ch', 'Password1234', ['ROLE_USER']);
+        $user = $this->userRepository->findOneBy(['email' => 'user@tcg.ch']);
+        $shop = ShopFactory::createOne(['user' => $user, 'enabled' => true]);
+        $event = EventFactory::createOne(['shop' => $shop]);
+
+        $this->esClient->indices()->refresh(['index' => EventIndex::NAME]);
+
+        $documents = $this->getAllEsEventDocuments();
+
+        $this->assertCount(1, $documents);
+        $this->assertSame($event->getName(), $documents[0]['name']);
+
+        $this->client->jsonRequest(
+            'DELETE',
+            '/api/backend/events/' . $event->getSlug()
+        );
+
+        $this->assertResponseStatusCodeSame(expectedCode: 204);
+
+        $this->esClient->indices()->refresh(['index' => EventIndex::NAME]);
+
+        $documents = $this->getAllEsEventDocuments();
+
+        $this->assertCount(0, $documents);
     }
 }

@@ -8,7 +8,9 @@ use App\Factory\ShopFactory;
 use App\Factory\UserFactory;
 use App\Repository\ShopRepository;
 use App\Repository\UserRepository;
+use App\Search\Index\ShopIndex;
 use App\Tests\AuthWebTestCase;
+use Elastic\Elasticsearch\Client;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Zenstruck\Foundry\Test\ResetDatabase;
 use Zenstruck\Foundry\Test\Factories;
@@ -19,6 +21,7 @@ final class ShopControllerTest extends AuthWebTestCase
 
     private ShopRepository $shopRepository;
     private UserRepository $userRepository;
+    private Client $esClient;
 
     protected function setUp(): void
     {
@@ -26,6 +29,37 @@ final class ShopControllerTest extends AuthWebTestCase
 
         $this->shopRepository = static::getContainer()->get(ShopRepository::class);
         $this->userRepository = static::getContainer()->get(UserRepository::class);
+        $this->esClient = static::getContainer()->get(Client::class);
+
+        if ($this->esClient->indices()->exists(['index' => ShopIndex::NAME])->asBool()) {
+            $this->esClient->indices()->delete(['index' => ShopIndex::NAME]);
+        }
+    }
+
+    protected function tearDown(): void
+    {
+        if ($this->esClient->indices()->exists(['index' => ShopIndex::NAME])->asBool()) {
+            $this->esClient->indices()->delete(['index' => ShopIndex::NAME]);
+        }
+        parent::tearDown();
+    }
+
+    protected function getAllEsShopDocuments(): array
+    {
+        $response = $this->esClient->search([
+            'index' => ShopIndex::NAME,
+            'body'  => [
+                'query' => [
+                    'match_all' => (object) [],
+                ]
+            ],
+            'size' => 1000,
+        ]);
+
+        return array_map(
+            fn (array $hit) => $hit['_source'],
+            $response['hits']['hits']
+        );
     }
 
     public function testShopListReturnsErrorIfNotAdmin(): void
@@ -416,5 +450,96 @@ final class ShopControllerTest extends AuthWebTestCase
         );
 
         $this->assertResponseStatusCodeSame(422);
+    }
+
+    public function testCreateShopIndexesToEsPropertly(): void
+    {
+        $this->authenticate('user@tcg.ch', 'Password1234', ['ROLE_USER']);
+        $this->client->jsonRequest(
+            'POST',
+            '/api/backend/shops',
+            [
+                'title' => 'Test',
+                'address' => 'Chemin de la carte 9',
+                'zipcode' => 1000,
+                'city' => 'Lausanne',
+                'state' => 'VD',
+                'longitude' => 43.342,
+                'latitude' => 43.2344
+            ]
+        );
+
+        $this->assertResponseStatusCodeSame(201);
+        
+        $this->esClient->indices()->refresh(['index' => ShopIndex::NAME]);
+
+        $documents = $this->getAllEsShopDocuments();
+
+        $this->assertCount(1, $documents);
+        $this->assertSame('Test', $documents[0]['title']);
+    }
+
+    public function testUpdateShopUpdateEsDocument(): void
+    {
+        $this->authenticate('user@tcg.ch', 'Password1234', ['ROLE_USER']);
+        $user = $this->userRepository->findOneBy(['email' => 'user@tcg.ch']);
+        $shop = ShopFactory::createOne(['user' => $user]);
+
+        $this->esClient->indices()->refresh(['index' => ShopIndex::NAME]);
+
+        $documents = $this->getAllEsShopDocuments();
+
+        $this->assertCount(1, $documents);
+        $this->assertSame($shop->getTitle(), $documents[0]['title']);
+
+        $this->client->jsonRequest(
+            'PUT',
+            '/api/backend/shops/' . $shop->getSlug(),
+            [
+                'title' => 'Test',
+                'address' => 'Chemin de la carte 9',
+                'zipcode' => 1000,
+                'city' => 'Lausanne',
+                'state' => 'VD',
+                'longitude' => 43.342,
+                'latitude' => 43.2344,
+            ]
+        );
+
+        $this->assertResponseStatusCodeSame(200);
+
+        $this->esClient->indices()->refresh(['index' => ShopIndex::NAME]);
+
+        $documents = $this->getAllEsShopDocuments();
+
+        $this->assertCount(1, $documents);
+        $this->assertSame('Test', $documents[0]['title']);
+    }
+
+    public function testDeleteShopRemovesEsDocument(): void
+    {
+        $this->authenticate('user@tcg.ch', 'Password1234', ['ROLE_USER']);
+        $user = $this->userRepository->findOneBy(['email' => 'user@tcg.ch']);
+        $shop = ShopFactory::createOne(['user' => $user]);
+
+        $this->esClient->indices()->refresh(['index' => ShopIndex::NAME]);
+
+        $documents = $this->getAllEsShopDocuments();
+
+        $this->assertCount(1, $documents);
+        $this->assertSame($shop->getTitle(), $documents[0]['title']);
+
+        $this->client->jsonRequest(
+            'DELETE',
+            '/api/backend/shops/' . $shop->getSlug()
+        );
+
+        $this->assertResponseStatusCodeSame(204);
+
+        $this->esClient->indices()->refresh(['index' => ShopIndex::NAME]);
+
+        $documents = $this->getAllEsShopDocuments();
+
+        $this->assertCount(0, $documents);
     }
 }

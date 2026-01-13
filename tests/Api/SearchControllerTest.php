@@ -19,9 +19,7 @@ final class SearchControllerTest extends AuthWebTestCase
     use ResetDatabase, Factories;
 
     private Client $esClient;
-
     private EventDocumentTransformer $eventDocumentTransformer;
-
     private ShopDocumentTransformer $shopDocumentTransformer;
 
     protected function setUp(): void
@@ -31,6 +29,10 @@ final class SearchControllerTest extends AuthWebTestCase
         $this->esClient = self::getContainer()->get(Client::class);
         $this->eventDocumentTransformer = new EventDocumentTransformer();
         $this->shopDocumentTransformer = new ShopDocumentTransformer();
+
+        $this->createIndex(ShopIndex::NAME . '_test', ShopIndex::mapping());
+        $this->createIndex(EventIndex::NAME . '_test', EventIndex::mapping());
+        $this->indexFixture();
     }
 
     protected function tearDown(): void
@@ -138,8 +140,6 @@ final class SearchControllerTest extends AuthWebTestCase
 
     public function testSearchReturnsAllShopsInBoundingBox(): void
     {
-        $this->createIndex(ShopIndex::NAME . '_test', ShopIndex::mapping());
-        $this->indexFixture();
 
         $this->client->jsonRequest(
             'GET',
@@ -151,15 +151,10 @@ final class SearchControllerTest extends AuthWebTestCase
         $data = json_decode($this->client->getResponse()->getContent(), true);
 
         $this->assertCount(5, $data['results']);
-
-        $this->deleteIndex(ShopIndex::NAME . '_test');
     }
 
     public function testSearchReturnsSomeShopsWithSmallerBoundingBox(): void
     {
-        $this->createIndex(ShopIndex::NAME . '_test', ShopIndex::mapping());
-        $this->indexFixture();
-
         $this->client->jsonRequest(
             'GET',
             '/api/search?index=' . ShopIndex::NAME . '_test' . '&geoBox[top_left][lat]=46.525&geoBox[top_left][lon]=6.620&geoBox[bottom_right][lat]=46.505&geoBox[bottom_right][lon]=6.640'
@@ -175,15 +170,10 @@ final class SearchControllerTest extends AuthWebTestCase
 
         $this->assertSame(['lat' => 46.5199, 'lon' => 6.6336], $shop['location']);
         $this->assertSame(['lat' => 46.5075, 'lon' => 6.6265], $shop2['location']);
-
-        $this->deleteIndex(ShopIndex::NAME . '_test');
     }
 
     public function testSearchReturnsNoShopsWithBoundingBoxElsewhere(): void
     {
-        $this->createIndex(ShopIndex::NAME . '_test', ShopIndex::mapping());
-        $this->indexFixture();
-
         $this->client->jsonRequest(
             'GET',
             '/api/search?index=' . ShopIndex::NAME . '_test' . '&geoBox[top_left][lat]=46.48&geoBox[top_left][lon]=6.60&geoBox[bottom_right][lat]=46.45&geoBox[bottom_right][lon]=6.65'
@@ -194,15 +184,10 @@ final class SearchControllerTest extends AuthWebTestCase
         $data = json_decode($this->client->getResponse()->getContent(), true);
 
         $this->assertCount(0, $data['results']);
-
-        $this->deleteIndex(ShopIndex::NAME . '_test');
     }
 
     public function testSearchReturnsAllEventsInBoundingBox(): void
     {
-        $this->createIndex(EventIndex::NAME . '_test', EventIndex::mapping());
-        $this->indexFixture();
-
         $this->client->jsonRequest(
             'GET',
             '/api/search?index=' . EventIndex::NAME . '_test' . '&geoBox[top_left][lat]=46.58&geoBox[top_left][lon]=6.56&geoBox[bottom_right][lat]=46.48&geoBox[bottom_right][lon]=6.72'
@@ -213,15 +198,10 @@ final class SearchControllerTest extends AuthWebTestCase
         $data = json_decode($this->client->getResponse()->getContent(), true);
 
         $this->assertCount(5, $data['results']);
-
-        $this->deleteIndex(EventIndex::NAME . '_test');
     }
 
     public function testSearchReturnsSomeEventsWithSmallerBoundingBox(): void
     {
-        $this->createIndex(EventIndex::NAME . '_test', EventIndex::mapping());
-        $this->indexFixture();
-
         $this->client->jsonRequest(
             'GET',
             '/api/search?index=' . EventIndex::NAME . '_test' . '&geoBox[top_left][lat]=46.525&geoBox[top_left][lon]=6.620&geoBox[bottom_right][lat]=46.505&geoBox[bottom_right][lon]=6.640'
@@ -237,15 +217,10 @@ final class SearchControllerTest extends AuthWebTestCase
 
         $this->assertSame(['lat' => 46.5199, 'lon' => 6.6336], $event['location']);
         $this->assertSame(['lat' => 46.5075, 'lon' => 6.6265], $event2['location']);
-
-        $this->deleteIndex(EventIndex::NAME . '_test');
     }
 
     public function testSearchReturnsNoEventsWithBoundingBoxElsewhere(): void
     {
-        $this->createIndex(EventIndex::NAME . '_test', EventIndex::mapping());
-        $this->indexFixture();
-
         $this->client->jsonRequest(
             'GET',
             '/api/search?index=' . EventIndex::NAME . '_test' . '&geoBox[top_left][lat]=46.48&geoBox[top_left][lon]=6.60&geoBox[bottom_right][lat]=46.45&geoBox[bottom_right][lon]=6.65'
@@ -256,15 +231,10 @@ final class SearchControllerTest extends AuthWebTestCase
         $data = json_decode($this->client->getResponse()->getContent(), true);
 
         $this->assertCount(0, $data['results']);
-
-        $this->deleteIndex(EventIndex::NAME . '_test');
     }
 
     public function testSearchReturnsShopsWithGamesFilter(): void
     {
-        $this->createIndex(ShopIndex::NAME . '_test', ShopIndex::mapping());
-        $this->indexFixture();
-
         $this->client->jsonRequest(
             'GET',
             '/api/search?index=' . ShopIndex::NAME . '_test' . '&filters[games][games.name]=Magic&geoBox[top_left][lat]=46.58&geoBox[top_left][lon]=6.56&geoBox[bottom_right][lat]=46.48&geoBox[bottom_right][lon]=6.72'
@@ -283,15 +253,10 @@ final class SearchControllerTest extends AuthWebTestCase
             'lat' => 46.5075,
             'lon' => 6.6265,
         ], $data['results'][1]['location']);
-
-        $this->deleteIndex(ShopIndex::NAME . '_test');
     }
 
     public function testSearchReturnsEventsWithGameFilter(): void
     {
-        $this->createIndex(EventIndex::NAME . '_test', EventIndex::mapping());
-        $this->indexFixture();
-
         $this->client->jsonRequest(
             'GET',
             '/api/search?index=' . EventIndex::NAME . '_test' . '&filters[game]=Pokemon&geoBox[top_left][lat]=46.58&geoBox[top_left][lon]=6.56&geoBox[bottom_right][lat]=46.48&geoBox[bottom_right][lon]=6.72'
@@ -314,7 +279,5 @@ final class SearchControllerTest extends AuthWebTestCase
             'lat' => 46.5510,
             'lon' => 6.6680,
         ], $data['results'][2]['location']);
-
-        $this->deleteIndex(EventIndex::NAME . '_test');
     }
 }

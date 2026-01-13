@@ -36,8 +36,8 @@ final class ShopFactory extends PersistentProxyObjectFactory
         return [
             'address' => self::faker()->address(),
             'city' => self::faker()->city(),
-            'latitude' => self::faker()->randomFloat(),
-            'longitude' => self::faker()->randomFloat(),
+            'latitude' => self::faker()->latitude(),
+            'longitude' => self::faker()->longitude(),
             'openingHours' => self::faker()->text(),
             'slug' => self::faker()->unique()->slug(3),
             'state' => 'VD',

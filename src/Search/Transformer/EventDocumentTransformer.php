@@ -11,7 +11,7 @@ final class EventDocumentTransformer
         $shop = $event->getShop();
 
         return [
-            'name' => $event->getId(),
+            'name' => $event->getName(),
             'game' => $event->getGame()->getName(),
             'format' => $event->getFormat(),
             'entry_cost' => $event->getEntryCost(),
