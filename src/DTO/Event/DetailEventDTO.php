@@ -22,7 +22,8 @@ final class DetailEventDTO
         public DateTimeImmutable $startDateTime,
         public DateTimeImmutable $endDateTime,
         public string $slug,
-        public array $participants
+        public array $participants,
+        public int $currentNumberParticipants
     ) {}
 
     public static function fromEntity(Event $event): self
@@ -42,6 +43,7 @@ final class DetailEventDTO
                 static fn (Participant $participant) => DetailParticipantDTO::fromEntity($participant),
                 $event->getParticipants()->toArray()
             ),
+            currentNumberParticipants: $event->getNumberParticipants() - $event->getParticipants()->count(),
         );
     }
 }

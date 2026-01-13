@@ -377,12 +377,33 @@ final class EventControllerTest extends AuthWebTestCase
         $this->assertNull($event);
     }
 
+    public function testRegisterEventReturnsErrorIfNoMoreSpots(): void
+    {
+        $this->authenticate('user@tcg.ch', 'Password1234', ['ROLE_USER']);
+        $user = $this->userRepository->findOneBy(['email' => 'user@tcg.ch']);
+        $shop = ShopFactory::createOne(['user' => $user, 'enabled' => true]);
+        $event = EventFactory::createOne(['shop' => $shop, 'numberParticipants' => 1]);
+        ParticipantFactory::createOne(['event' => $event]);
+
+        $this->client->jsonRequest(
+            'POST',
+            '/api/events/' . $event->getSlug() . '/register',
+            [
+                'firstName' => 'Toto',
+                'lastName' => 'Tata',
+                'email' => 'test@toto.ch'
+            ]
+        );
+
+        $this->assertResponseStatusCodeSame(403);
+    }
+
     public function testRegisterEventReturnsErrorIfPayloadIsNotCorrect(): void
     {
         $this->authenticate('user@tcg.ch', 'Password1234', ['ROLE_USER']);
         $user = $this->userRepository->findOneBy(['email' => 'user@tcg.ch']);
         $shop = ShopFactory::createOne(['user' => $user, 'enabled' => true]);
-        $event = EventFactory::createOne(['shop' => $shop]);
+        $event = EventFactory::createOne(['shop' => $shop, 'numberParticipants' => 5]);
 
         $this->client->jsonRequest(
             'POST',
@@ -398,7 +419,7 @@ final class EventControllerTest extends AuthWebTestCase
         $this->authenticate('user@tcg.ch', 'Password1234', ['ROLE_USER']);
         $user = $this->userRepository->findOneBy(['email' => 'user@tcg.ch']);
         $shop = ShopFactory::createOne(['user' => $user, 'enabled' => false]);
-        $event = EventFactory::createOne(['shop' => $shop]);
+        $event = EventFactory::createOne(['shop' => $shop, 'numberParticipants' => 5]);
 
         $this->client->jsonRequest(
             'POST',

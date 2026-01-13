@@ -135,6 +135,10 @@ final class EventController extends AbstractController
         EntityManagerInterface $entityManager,
         ParticipantServiceInterface $participantService
     ): JsonResponse {
+        if ($event->getNumberParticipants() <= $event->getParticipants()->count()) {
+            return $this->json(null, Response::HTTP_FORBIDDEN);
+        }
+        
         $shop = $event->getShop();
 
         if (!$shop->getEnabled()) {

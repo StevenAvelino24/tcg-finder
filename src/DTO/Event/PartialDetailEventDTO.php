@@ -15,7 +15,8 @@ final class PartialDetailEventDTO
         public int $numberParticipants,
         public DateTimeImmutable $startDateTime,
         public DateTimeImmutable $endDateTime,
-        public string $slug
+        public string $slug,
+        public int $currentNumberParticipants
     ) {}
 
     public static function fromEntity(Event $event): self
@@ -27,7 +28,8 @@ final class PartialDetailEventDTO
             numberParticipants: $event->getNumberParticipants(),
             startDateTime: $event->getStartDateTime(),
             endDateTime: $event->getEndDateTime(),
-            slug: $event->getSlug()
+            slug: $event->getSlug(),
+            currentNumberParticipants: $event->getNumberParticipants() - $event->getParticipants()->count()
         );
     }
 }
