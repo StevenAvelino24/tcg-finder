@@ -1,0 +1,13 @@
+<template>
+    <div class="min-h-screen flex flex-col tracking-wide">
+        <Heading />
+
+        <main class="grow">
+            <div class="container mx-auto px-4 py-8 sm:px-6 lg:px-8 max-w-7xl">
+                <slot />
+            </div>
+        </main>
+
+        <Footing />
+    </div>
+</template>

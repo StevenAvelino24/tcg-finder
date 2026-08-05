@@ -1,0 +1,14 @@
+{
+    "register.form.title": "Créer un compte",
+    "register.button": "S'enregistrer",
+    "register.form.errors.email": "Email pas valide.",
+    "register.form.errors.password.not_blank": "Le mot de passe doit être rempli.",
+    "register.form.errors.password.not_long_enough": "Le mot de passe doit contenir au moins 8 caractères.",
+    "register.form.errors.misc": "Un problème est survenu.",
+    "register.form.firstname": "Prénom",
+    "register.form.lastname": "Nom",
+    "register.form.email": "Email",
+    "register.form.password": "Mot de passe",
+    "register.form.submit": "S'enregistrer",
+    "register.form.errors.too_short": "Ce champs doit contenir au moins 2 caractères."
+}
