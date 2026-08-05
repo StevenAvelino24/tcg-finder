@@ -1,5 +1,5 @@
 # Use the official FrankenPHP image with PHP 8.3 and Debian Bookworm base
-FROM dunglas/frankenphp:php8.4
+FROM dunglas/frankenphp:php8.5
 
 # Install system libraries
 RUN apt-get update && apt-get install -y --no-install-recommends \
