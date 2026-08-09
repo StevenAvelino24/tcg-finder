@@ -24,7 +24,8 @@ abstract class AuthWebTestCase extends WebTestCase
         string $password,
         array $roles = ['ROLE_USER'],
         string $firstName = 'Test',
-        string $lastName = 'Test'
+        string $lastName = 'Test',
+        bool $isVerified = true
     ): void
     {
         $hasher = self::getContainer()->get(UserPasswordHasherInterface::class);
@@ -33,7 +34,8 @@ abstract class AuthWebTestCase extends WebTestCase
             'password' => $hasher->hashPassword(new User(), $password),
             'roles' => $roles,
             'firstName' => $firstName,
-            'lastName' => $lastName
+            'lastName' => $lastName,
+            'isVerified' => $isVerified
         ]);
 
         $this->client->jsonRequest(
