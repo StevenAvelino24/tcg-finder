@@ -8,6 +8,6 @@ use App\Entity\Shop;
 
 interface EventServiceInterface
 {
-    public function createFromDTO(CreateEventDTO $dto, Shop $shop): ?Event;
+    public function createFromDTO(CreateEventDTO $dto): ?Event;
     public function updateFromDTO(CreateEventDTO $dto, Event $event): ?Event;
 }

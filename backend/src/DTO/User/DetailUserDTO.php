@@ -2,13 +2,15 @@
 
 namespace App\DTO\User;
 
+use App\DTO\Shop\PartialDetailShopDTO;
+use App\Entity\Shop;
 use App\Entity\User;
 
 final class DetailUserDTO
 {
     public function __construct(
         public string $email,
-        public bool $hasShop,
+        public array $shops,
         public string $firstName,
         public string $lastName,
         public array $roles,
@@ -18,7 +20,10 @@ final class DetailUserDTO
     {
         return new self(
             email: $user->getEmail(),
-            hasShop: $user->getShop() !== null,
+            shops: array_map(
+                static fn (Shop $shop) => PartialDetailShopDTO::fromEntity($shop),
+                $user->getShops()->toArray()
+            ),
             firstName: $user->getFirstName(),
             lastName: $user->getLastName(),
             roles: $user->getRoles(),

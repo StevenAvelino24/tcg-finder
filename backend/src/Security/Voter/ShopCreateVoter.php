@@ -2,7 +2,6 @@
 
 namespace App\Security\Voter;
 
-use App\Entity\Shop;
 use App\Entity\User;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Security\Core\Authorization\Voter\Voter;
@@ -27,6 +26,10 @@ class ShopCreateVoter extends Voter
             return false;
         }
 
-        return !$user->getShop();
+        if (count($user->getShops()) >= 10) {
+            return false;
+        }
+
+        return true;
     }
 }

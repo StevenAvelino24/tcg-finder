@@ -100,7 +100,7 @@ final class EventControllerTest extends AuthWebTestCase
     {
         $this->client->jsonRequest(
             'GET',
-            '/api/backend/events'
+            '/api/backend/shops/test/events'
         );
 
         $this->assertResponseStatusCodeSame(expectedCode: 401);
@@ -110,11 +110,11 @@ final class EventControllerTest extends AuthWebTestCase
     {
         $this->authenticate('user@tcg.ch', 'Password1234', ['ROLE_USER']);
         $user = $this->userRepository->findOneBy(['email' => 'user@tcg.ch']);
-        ShopFactory::createOne(['user' => $user, 'enabled' => false]);
+        $shop = ShopFactory::createOne(['user' => $user, 'enabled' => false]);
 
         $this->client->jsonRequest(
             'GET',
-            '/api/backend/events'
+            '/api/backend/shops/' . $shop->getSlug() . '/events'
         );
 
         $this->assertResponseStatusCodeSame(expectedCode: 403);
@@ -134,7 +134,7 @@ final class EventControllerTest extends AuthWebTestCase
 
         $this->client->jsonRequest(
             'GET',
-            '/api/backend/events'
+            '/api/backend/shops/' . $shop->getSlug() . '/events'
         );
 
         $this->assertResponseStatusCodeSame(200);
@@ -191,7 +191,7 @@ final class EventControllerTest extends AuthWebTestCase
     {
         $this->authenticate('user@tcg.ch', 'Password1234', ['ROLE_USER']);
         $user = $this->userRepository->findOneBy(['email' => 'user@tcg.ch']);
-        ShopFactory::createOne(['user' => $user, 'enabled' => false]);
+        $shop = ShopFactory::createOne(['user' => $user, 'enabled' => false]);
         $game = GameFactory::createOne();
         $date = new DateTimeImmutable();
 
@@ -207,6 +207,7 @@ final class EventControllerTest extends AuthWebTestCase
                 'numberParticipants' => 10,
                 'startDateTime' => $date->format('d M Y H:i:s'),
                 'endDateTime' => $date->format('d M Y H:i:s'),
+                'shopId' => $shop->getId(),
             ]
         );
 
@@ -234,7 +235,7 @@ final class EventControllerTest extends AuthWebTestCase
     {
         $this->authenticate('user@tcg.ch', 'Password1234', ['ROLE_USER']);
         $user = $this->userRepository->findOneBy(['email' => 'user@tcg.ch']);
-        ShopFactory::createOne(['user' => $user, 'enabled' => true]);
+        $shop = ShopFactory::createOne(['user' => $user, 'enabled' => true]);
         $game = GameFactory::createOne();
         $date = new DateTimeImmutable();
 
@@ -250,6 +251,7 @@ final class EventControllerTest extends AuthWebTestCase
                 'numberParticipants' => 10,
                 'startDateTime' => $date->format('d M Y H:i:s'),
                 'endDateTime' => $date->format('d M Y H:i:s'),
+                'shopId' => $shop->getId(),
             ]
         );
 
@@ -343,6 +345,7 @@ final class EventControllerTest extends AuthWebTestCase
                 'numberParticipants' => 10,
                 'startDateTime' => $date->format('d M Y H:i:s'),
                 'endDateTime' => $date->format('d M Y H:i:s'),
+                'shopId' => $shop->getId(),
             ]
         );
 
@@ -539,7 +542,7 @@ final class EventControllerTest extends AuthWebTestCase
     {
         $this->authenticate('user@tcg.ch', 'Password1234', ['ROLE_USER']);
         $user = $this->userRepository->findOneBy(['email' => 'user@tcg.ch']);
-        ShopFactory::createOne(['user' => $user, 'enabled' => true]);
+        $shop = ShopFactory::createOne(['user' => $user, 'enabled' => true]);
         $game = GameFactory::createOne();
         $date = new DateTimeImmutable();
 
@@ -555,6 +558,7 @@ final class EventControllerTest extends AuthWebTestCase
                 'numberParticipants' => 10,
                 'startDateTime' => $date->format('d M Y H:i:s'),
                 'endDateTime' => $date->format('d M Y H:i:s'),
+                'shopId' => $shop->getId(),
             ]
         );
 
@@ -596,6 +600,7 @@ final class EventControllerTest extends AuthWebTestCase
                 'numberParticipants' => 10,
                 'startDateTime' => $date->format('d M Y H:i:s'),
                 'endDateTime' => $date->format('d M Y H:i:s'),
+                'shopId' => $shop->getId(),
             ]
         );
 

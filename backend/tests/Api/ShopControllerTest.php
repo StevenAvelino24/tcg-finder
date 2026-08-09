@@ -234,11 +234,11 @@ final class ShopControllerTest extends AuthWebTestCase
         $this->assertResponseStatusCodeSame(401);
     }
 
-    public function testShopCreateReturnsErrorIfUserAlreadyHasShop(): void
+    public function testShopCreateReturnsErrorIfUserHas10ShopsAlready(): void
     {
         $this->authenticate('user@tcg.ch', 'Password1234', ['ROLE_USER']);
         $user = $this->userRepository->findOneBy(['email' => 'user@tcg.ch']);
-        ShopFactory::createOne(['user' => $user, 'enabled' => false]);
+        ShopFactory::createMany(10, ['user' => $user]);
 
         $this->client->jsonRequest(
             'POST',

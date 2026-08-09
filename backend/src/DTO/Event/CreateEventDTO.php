@@ -13,6 +13,9 @@ final class CreateEventDTO
     #[Assert\NotNull(message: 'event.game.not_null')]
     public int $gameId;
 
+    #[Assert\NotNull(message: 'event.shop.not_null')]
+    public int $shopId;
+
     #[Assert\NotBlank(message: 'event.format.not_blank')]
     public string $format;
 

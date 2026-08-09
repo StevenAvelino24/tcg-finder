@@ -10,13 +10,12 @@ use Symfony\Component\Security\Core\Authorization\Voter\Voter;
 
 class EventVoter extends Voter
 {
-    public const CREATE = 'EVENT_CREATE';
     public const EDIT = 'EVENT_EDIT';
     public const DELETE = 'EVENT_DELETE';
 
     protected function supports(string $attribute, mixed $subject): bool
     {
-        return in_array($attribute, [self::CREATE, self::EDIT, self::DELETE], true)
+        return in_array($attribute, [self::EDIT, self::DELETE], true)
             && $subject instanceof Event;
     }
 
@@ -31,7 +30,7 @@ class EventVoter extends Voter
             return false;
         }
 
-        $shop = $user->getShop();
+        $shop = $subject->getShop();
 
         if (!$shop instanceof Shop) {
             return false;

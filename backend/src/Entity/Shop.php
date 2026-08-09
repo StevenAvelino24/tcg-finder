@@ -74,13 +74,7 @@ class Shop
     #[ORM\Column(length: 180, unique: true)]
     private string $slug;
 
-    #[ORM\OneToOne(targetEntity: User::class)]
-    #[ORM\JoinColumn(
-        name: 'user_id',
-        referencedColumnName: 'id',
-        nullable: false,
-        onDelete: 'CASCADE'
-    )]
+    #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'shops')]
     #[Assert\NotNull(message: 'shop.user.not_null')]
     private User $user;
 

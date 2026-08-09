@@ -6,19 +6,20 @@ use App\DTO\Event\CreateEventDTO;
 use App\Entity\Event;
 use App\Entity\Shop;
 use App\Repository\GameRepository;
+use App\Repository\ShopRepository;
 use Symfony\Component\String\Slugger\SluggerInterface;
 
 final class EventService implements EventServiceInterface
 {
     public function __construct(
         private GameRepository $gameRepository,
+        private ShopRepository $shopRepository,
         private SluggerInterface $slugger
     ) {}
 
-    public function createFromDTO(CreateEventDTO $dto, Shop $shop): ?Event
+    public function createFromDTO(CreateEventDTO $dto): ?Event
     {
         $event = new Event();
-        $event->setShop($shop);
         $event->setSlug(
             $this->slugger->slug($dto->name)->lower()
         );
@@ -51,6 +52,14 @@ final class EventService implements EventServiceInterface
         }
 
         $event->setGame($game);
+
+        $shop = $this->shopRepository->findOneBy(['id' => $dto->shopId]);
+
+        if (!$shop || !$shop->getEnabled()) {
+            return null;
+        }
+
+        $event->setShop($shop);
 
         return $event;
     }

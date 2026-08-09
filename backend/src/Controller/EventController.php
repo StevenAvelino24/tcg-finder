@@ -7,7 +7,7 @@ use App\DTO\Event\DetailEventDTO;
 use App\DTO\Participant\CreateParticipantDTO;
 use App\DTO\Participant\DetailParticipantDTO;
 use App\Entity\Event;
-use App\Entity\User;
+use App\Entity\Shop;
 use App\Repository\EventRepository;
 use App\Repository\ParticipantRepository;
 use App\Service\Event\EventServiceInterface;
@@ -26,8 +26,6 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 #[Route('/api', name: 'events_')]
 final class EventController extends AbstractController
 {
-
-
     #[Route('/admin/events', name: 'list', methods: ['GET'])]
     public function list(EventRepository $eventRepository): JsonResponse
     {
@@ -40,13 +38,11 @@ final class EventController extends AbstractController
         );
     }
 
-    #[Route('/backend/events', name: 'shop_list', methods: ['GET'])]
-    public function shopList(EventRepository $eventRepository): JsonResponse
-    {
-        /** @var User */
-        $user = $this->getUser();
-        $shop = $user->getShop();
-
+    #[Route('/backend/shops/{slug}/events', name: 'shop_list', methods: ['GET'])]
+    public function shopList(
+        #[MapEntity(mapping: ['slug' => 'slug'])] Shop $shop,
+        EventRepository $eventRepository
+    ): JsonResponse {
         if (!$shop || !$shop->getEnabled()) {
             return $this->json(null, Response::HTTP_FORBIDDEN);
         }
@@ -77,15 +73,11 @@ final class EventController extends AbstractController
         EventServiceInterface $eventService,
         EntityManagerInterface $entityManager
     ): JsonResponse {
-        /** @var User */
-        $user = $this->getUser();
-        $shop = $user->getShop();
-        
-        if (!$shop || !$shop->getEnabled()) {
+        $event = $eventService->createFromDTO($dto);
+
+        if (!$event) {
             return $this->json(null, Response::HTTP_FORBIDDEN);
         }
-
-        $event = $eventService->createFromDTO($dto, $user->getShop());
 
         $entityManager->persist($event);
         $entityManager->flush();

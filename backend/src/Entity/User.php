@@ -3,6 +3,8 @@
 namespace App\Entity;
 
 use App\Repository\UserRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
@@ -30,16 +32,25 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[Assert\NotBlank(message: 'auth.password.not_blank')]
     private string $password;
 
-    #[ORM\OneToOne(mappedBy: 'user', targetEntity: Shop::class)]
-    private ?Shop $shop = null;
+    #[ORM\OneToMany(
+        mappedBy: 'user',
+        targetEntity: Shop::class,
+        cascade: ['persist', 'remove'],
+        orphanRemoval: true
+    )]
+    private Collection $shops;
 
     #[ORM\Column]
     #[Assert\NotBlank(message: 'auth.first_name.not_blank')]
     private string $firstName;
 
     #[ORM\Column]
-    #[Assert\NotBlank(message: 'auth.last_name.not_blank')]
-    private string $lastName;
+    private ?string $lastName = null;
+
+    public function __construct()
+    {
+        $this->shops = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -91,9 +102,26 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    public function getShop(): ?Shop
+    public function getShops(): Collection
     {
-        return $this->shop;
+        return $this->shops;
+    }
+
+    public function addShop(Shop $shop): static
+    {
+        if (!$this->shops->contains($shop)) {
+            $this->shops[] = $shop;
+            $shop->setUser($this);
+        }
+
+        return $this;
+    }
+
+    public function removeShop(Shop $shop): static
+    {
+        $this->shops->removeElement($shop);
+
+        return $this;
     }
 
     public function getFirstName(): string
@@ -108,12 +136,12 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    public function getLastName(): string
+    public function getLastName(): ?string
     {
         return $this->lastName;
     }
 
-    public function setLastName(string $lastName): static
+    public function setLastName(?string $lastName): static
     {
         $this->lastName = $lastName;
 

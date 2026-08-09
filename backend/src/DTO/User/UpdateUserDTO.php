@@ -13,6 +13,5 @@ final class UpdateUserDTO
     #[Assert\NotBlank(message: 'auth.first_name.not_blank')]
     public string $firstName;
 
-    #[Assert\NotBlank(message: 'auth.last_name.not_blank')]
-    public string $lastName;
+    public ?string $lastName = null;
 }
