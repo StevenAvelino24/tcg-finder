@@ -10,4 +10,5 @@ interface UserServiceInterface
 {
     public function createFromDTO(CreateUserDTO $dto): User;
     public function updateFromDTO(UpdateUserDTO $dto, User $user): User;
+    public function resetPassword(User $user, string $password): User;
 }

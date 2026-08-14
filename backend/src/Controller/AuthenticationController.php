@@ -4,6 +4,8 @@ namespace App\Controller;
 
 use App\DTO\User\CreateUserDTO;
 use App\DTO\User\DetailUserDTO;
+use App\DTO\User\ForgotPasswordDTO;
+use App\DTO\User\ResetPasswordDTO;
 use App\DTO\User\UpdateUserDTO;
 use App\Entity\User;
 use App\Repository\UserRepository;
@@ -20,7 +22,9 @@ use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Mime\Address;
 use Symfony\Component\Routing\Attribute\Route;
+use SymfonyCasts\Bundle\ResetPassword\ResetPasswordHelperInterface;
 use SymfonyCasts\Bundle\VerifyEmail\VerifyEmailHelperInterface;
+use SymfonyCasts\Bundle\ResetPassword\Exception\ResetPasswordExceptionInterface;
 
 #[Route('/api', name: 'auth_')]
 final class AuthenticationController extends AbstractController
@@ -31,7 +35,8 @@ final class AuthenticationController extends AbstractController
         protected readonly VerifyEmailHelperInterface $verifyEmailHelper,
         protected readonly MailerInterface $mailer,
         protected readonly UserRepository $userRepository,
-        private readonly ParameterBagInterface $params,
+        protected readonly ParameterBagInterface $params,
+        protected readonly ResetPasswordHelperInterface $resetPasswordHelper
     ) {}
 
     #[Route('/register', name: 'register', methods: ['POST'])]
@@ -52,7 +57,7 @@ final class AuthenticationController extends AbstractController
         );
     }
 
-    #[Route('/verify/email', name: 'verify_email')]
+    #[Route('/verify_email', name: 'verify_email', methods: ['GET'])]
     public function verifyEmail(Request $request): JsonResponse
     {
         /** @var User **/
@@ -75,10 +80,10 @@ final class AuthenticationController extends AbstractController
         $user->setIsVerified(true);
         $this->entityManager->flush();
 
-        return $this->json([]);
+        return $this->json([], Response::HTTP_OK);
     }
 
-    #[Route('/resend_verify_email', name: 'resend_verify_email')]
+    #[Route('/resend_verify_email', name: 'resend_verify_email', methods: ['GET'])]
     public function resendVerifyEmail(Request $request): JsonResponse
     {
         $user = $this->userRepository->find($request->query->get('id'));
@@ -93,7 +98,7 @@ final class AuthenticationController extends AbstractController
 
         $this->sendVerificationEmail($user->getId(), $user->getEmail());
 
-        return $this->json([]);
+        return $this->json([], Response::HTTP_OK);
     }
 
     #[Route('/backend/user', name: 'update', methods: ['PUT'])]
@@ -133,6 +138,56 @@ final class AuthenticationController extends AbstractController
         );
     }
 
+    #[Route('/forgot_password', name: 'forgot_password', methods: ['POST'])]
+    public function forgotPassword(
+        #[MapRequestPayload()] ForgotPasswordDTO $dto,
+    ): JsonResponse {
+        $user = $this->userRepository->findOneBy(['email' => $dto->email]);
+
+        if (!$user) {
+            return $this->json([], Response::HTTP_OK);
+        }
+
+        try {
+            $resetToken = $this->resetPasswordHelper->generateResetToken($user);
+        } catch (ResetPasswordExceptionInterface $e) {
+            return $this->json([], Response::HTTP_OK);
+        }
+
+        $email = (new TemplatedEmail())
+            ->from(new Address('no-reply@tcg-finder.ch', 'TCG Finder'))
+            ->to($user->getEmail())
+            ->subject('Reset your password')
+            ->htmlTemplate('emails/reset_password.html.twig')
+            ->context(['resetUrl' => $this->params->get('app.frontend_url') . '/reset_password?token=' . $resetToken->getToken(), 'expiresAt' => $resetToken->getExpiresAt()]);
+
+        $this->mailer->send($email);
+
+        return $this->json([], Response::HTTP_OK);
+    }
+
+    #[Route('/reset_password', name: 'reset_password', methods: ['POST'])]
+    public function resetPassword(
+        #[MapRequestPayload()] ResetPasswordDTO $dto,
+    ) : JsonResponse {
+        $user = null;
+
+        try {
+            $user = $this->resetPasswordHelper->validateTokenAndFetchUser($dto->token);
+        } catch (Exception $e) {
+            $this->json([], Response::HTTP_BAD_REQUEST);
+        }
+
+        if (!$user) {
+            return $this->json([], Response::HTTP_BAD_REQUEST);
+        }
+
+        $user = $this->userService->resetPassword($user, $dto->password);
+        $this->entityManager->flush();
+
+        return $this->json([]);
+    }
+
     protected function sendVerificationEmail(string $userId, string $userEmail)
     {
         $signatureComponents = $this->verifyEmailHelper->generateSignature(
@@ -149,7 +204,7 @@ final class AuthenticationController extends AbstractController
             ->htmlTemplate('emails/verify_email.html.twig')
             ->context([
                 'userEmail' => $userEmail,
-                'signedUrl' => $this->params->get('app.frontend_url') . '?' . parse_url($signatureComponents->getSignedUrl(), PHP_URL_QUERY),
+                'signedUrl' => $this->params->get('app.frontend_url') . '/verify_email?' . parse_url($signatureComponents->getSignedUrl(), PHP_URL_QUERY),
             ]);
 
         $this->mailer->send($email);

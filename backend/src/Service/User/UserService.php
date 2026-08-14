@@ -33,6 +33,14 @@ final class UserService implements UserServiceInterface
         return $this->map($dto, $user);
     }
 
+    public function resetPassword(User $user, string $password): User
+    {
+        $hashedPassword = $this->passwordHasher->hashPassword($user, $password);
+        $user->setPassword($hashedPassword);
+
+        return $user;
+    }
+
     private function map(CreateUserDTO|UpdateUserDTO $dto, User $user): User
     {
         $user

@@ -5,6 +5,7 @@ namespace App\Tests\Api;
 use App\Tests\AuthWebTestCase;
 use App\Repository\UserRepository;
 use App\Factory\UserFactory;
+use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Zenstruck\Foundry\Test\ResetDatabase;
 use Zenstruck\Foundry\Test\Factories;
 
@@ -207,6 +208,71 @@ final class AuthenticationControllerTest extends AuthWebTestCase
 
         $this->assertEmailHeaderSame($email, 'To', 'admin@admin.ch');
         $this->assertEmailHtmlBodyContains($email, 'verify');
+    }
+
+    public function testForgotPasswordSendsNoEmailIfNoUserWithEmailReceived(): void
+    {
+        UserFactory::createOne([
+            'email' => 'admin@admin.ch',
+            'password' => 'password123',
+            'firstName' => 'Test',
+            'lastName' => 'Test',
+            'isVerified' => false
+        ]);
+
+        $this->client->jsonRequest(
+            'POST',
+            '/api/forgot_password',
+            [
+                'email' => 'test@admin.ch'
+            ]
+        );
+
+        $this->assertResponseStatusCodeSame(200);
+        $this->assertEmailCount(0);
+    }
+
+    public function testForgotPasswordSendsEmailIfUserWithEmailReceived(): void
+    {
+        UserFactory::createOne([
+            'email' => 'admin@admin.ch',
+            'password' => 'password123',
+            'firstName' => 'Test',
+            'lastName' => 'Test',
+            'isVerified' => true
+        ]);
+
+        $this->client->jsonRequest(
+            'POST',
+            '/api/forgot_password',
+            [
+                'email' => 'admin@admin.ch'
+            ]
+        );
+
+        $this->assertResponseStatusCodeSame(200);
+        $this->assertEmailCount(1);
+
+        $email = $this->getMailerMessage();
+
+        $this->assertEmailHeaderSame($email, 'To', 'admin@admin.ch');
+        $this->assertEmailHtmlBodyContains($email, 'reset');
+
+        $htmlBody = $email->getHtmlBody();
+        preg_match('/href="([^"]+)"/', $htmlBody, $matches);
+        $signedUrl = html_entity_decode($matches[1]);
+
+        $parsedUrl = parse_url($signedUrl);
+        $query = explode('=', $parsedUrl['query']);
+        $this->client->jsonRequest('POST', $parsedUrl['path'], ['token' => $query[1], 'password' => 'TcgFinder123']);
+
+        $this->assertResponseIsSuccessful();
+
+        $user = $this->userRepository->findOneBy(['email' => 'admin@admin.ch']);
+        $passwordHasher = static::getContainer()->get(UserPasswordHasherInterface::class);
+
+        $this->assertTrue($passwordHasher->isPasswordValid($user, 'TcgFinder123'));
+        $this->assertFalse($passwordHasher->isPasswordValid($user, 'password123'));
     }
 
     public function testMeWithNoToken(): void
