@@ -1,4 +1,6 @@
 <script setup lang="ts">
+    import Link from './atoms/Link.vue';
+
     const { isLoggedIn } = useUser();
 </script>
 
@@ -7,12 +9,24 @@
         <div class="container mx-auto flex items-center justify-between px-4 py-6">
             <NavBar />
             <div class="flex items-center gap-4">
-                <NuxtLinkLocale v-if="!isLoggedIn" to="login" class="rounded-4xl bg-primary text-secondary px-6 py-2.5 hover:text-primary hover:bg-secondary transition-colors duration-400">
+                <Link
+                    v-if="!isLoggedIn"
+                    to="login"
+                    variant="button"
+                    color="primary"
+                    text-size="md"
+                >
                     {{ $t('header.login') }}
-                </NuxtLinkLocale>
-                <NuxtLinkLocale class="rounded-4xl bg-primary text-secondary px-6 py-2.5 hover:text-primary hover:bg-secondary transition-colors duration-400" to="profile" v-else>
+                </Link>
+                <Link
+                    v-else
+                    to="profile"
+                    variant="button"
+                    color="primary"
+                    text-size="md"
+                >
                     {{ $t('header.view_profile') }}
-                </NuxtLinkLocale>
+                </Link>
                 <LangSwitcher />
             </div>
         </div>

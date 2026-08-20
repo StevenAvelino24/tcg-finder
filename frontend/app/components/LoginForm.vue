@@ -3,6 +3,9 @@
     import { toTypedSchema } from '@vee-validate/zod'
     import * as z from 'zod'
 
+    import TextInput from './atoms/TextInput.vue';
+    import Button from './atoms/Button.vue';
+
     const { addToast } = useToast();
 
     const schema = toTypedSchema(z.object({
@@ -45,24 +48,33 @@
 <template>
     <form @submit="onSubmit" class="max-w-md mx-auto space-y-6 p-6 bg-white rounded-xl shadow-md border border-primary">
         <div class="flex flex-col space-y-2">
-            <Label for="email" class="text-sm font-medium text-gray-700">{{ $t('login.form.email') }}</Label>
-            <input id="email" v-model="username" v-bind="usernameProps" type="email" required class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-primary outline-none transition-all" />
-            <span class="text-sm text-red-500">{{ errors.username }}</span>
+            <TextInput
+                type="email"
+                label-key="login.form.email"
+                id="email"
+                :error="errors.username"
+                v-model="username"
+                v-bind="usernameProps"
+            />
         </div>
 
         <div class="flex flex-col space-y-2">
-            <Label for="password" class="text-sm font-medium text-gray-700">{{ $t('login.form.password') }}</Label>
-            <input id="password" v-model="password" v-bind="passwordProps" type="password" required class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-primary outline-none transition-all" />
-            <span class="text-sm text-red-500">{{ errors.password }}</span>
+            <TextInput
+                type="password"
+                label-key="login.form.password"
+                id="password"
+                :error="errors.password"
+                v-model="password"
+                v-bind="passwordProps"
+            />
         </div>
 
-        <button
+        <Button
             type="submit"
-            class="w-full bg-primary rounded-4xl text-white py-2 px-4 transition-all"
-            :class="!meta.valid 
-            ? 'opacity-50 cursor-not-allowed text-gray-500' 
-            : 'hover:cursor-pointer hover:opacity-90'"
+            variant="primary"
             :disabled="!meta.valid"
-        >{{ $t('login.form.submit') }}</button>
+        >
+            {{ $t('login.form.submit') }}
+        </Button>
     </form>
 </template>

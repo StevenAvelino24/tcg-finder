@@ -1,5 +1,5 @@
 <template>
-    <div class="min-h-screen flex flex-col tracking-wide">
+    <div class="min-h-screen flex flex-col tracking-wide text-primary-text bg-gray-50">
         <Heading />
 
         <main class="grow">

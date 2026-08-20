@@ -3,13 +3,18 @@
     import { toTypedSchema } from '@vee-validate/zod'
     import * as z from 'zod'
 
+    import TextInput from './atoms/TextInput.vue';
+    import Button from './atoms/Button.vue';
+
     const { addToast } = useToast();
     const localePath = useLocalePath();
 
-    const optionalString = z.preprocess(
-        (val) => (val === '' ? undefined : val), 
-        z.string().min(2, $t('register.form.errors.too_short')).optional()
-    );
+    const optionalString = z
+        .string()
+        .min(2, $t('register.form.errors.too_short'))
+        .optional()
+        .or(z.literal(''))
+        .transform((val) => (val === '' ? undefined : val));
 
     const schema = toTypedSchema(z.object({
         firstName: optionalString,
@@ -60,42 +65,66 @@
     <form @submit="onSubmit" class="max-w-md mx-auto space-y-6 p-6 bg-white rounded-xl shadow-md border border-primary">
         <div class="grid grid-cols-2 gap-4">
             <div class="flex flex-col space-y-2">
-                <Label for="firstname" class="text-sm font-medium text-gray-700">{{ $t('register.form.firstname') }}</Label>
-                <input id="firstname" v-model="firstName" v-bind="firstnameProps" type="text" class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-primary outline-none transition-all" />
-                <span class="text-sm text-red-500">{{ errors.firstName }}</span>
+                <TextInput
+                    type="text"
+                    label-key="register.form.firstname"
+                    id="firstname"
+                    :error="errors.firstName"
+                    v-model="firstName"
+                    v-bind="firstnameProps"
+                />
             </div>
             <div class="flex flex-col space-y-2">
-                <Label for="lastname" class="text-sm font-medium text-gray-700">{{ $t('register.form.lastname') }}</Label>
-                <input id="lastname" v-model="lastName" v-bind="lastnameProps" type="text" class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-primary outline-none transition-all" />
-                <span class="text-sm text-red-500">{{ errors.lastName }}</span>
+                <TextInput
+                    type="text"
+                    label-key="register.form.lastname"
+                    id="lastname"
+                    :error="errors.lastName"
+                    v-model="lastName"
+                    v-bind="lastnameProps"
+                />
             </div>
         </div>
 
         <div class="flex flex-col space-y-2">
-            <Label for="email" class="text-sm font-medium text-gray-700">{{ $t('register.form.email') }}</Label>
-            <input id="email" v-model="email" v-bind="emailProps" type="email" required class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-primary outline-none transition-all" />
-            <span class="text-sm text-red-500">{{ errors.email }}</span>
+            <TextInput
+                type="email"
+                label-key="register.form.email"
+                id="email"
+                :error="errors.email"
+                v-model="email"
+                v-bind="emailProps"
+            />
         </div>
 
         <div class="flex flex-col space-y-2">
-            <Label for="password" class="text-sm font-medium text-gray-700">{{ $t('register.form.password') }}</Label>
-            <input id="password" v-model="password" v-bind="passwordProps" type="password" required class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-primary outline-none transition-all" />
-            <span class="text-sm text-red-500">{{ errors.password }}</span>
+            <TextInput
+                type="password"
+                label-key="register.form.password"
+                id="password"
+                :error="errors.password"
+                v-model="password"
+                v-bind="passwordProps"
+            />
         </div>
 
         <div class="flex flex-col space-y-2">
-            <Label for="password" class="text-sm font-medium text-gray-700">{{ $t('register.form.repeatPassword') }}</Label>
-            <input id="password" v-model="repeatPassword" v-bind="repeatPasswordProps" type="password" required class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-primary outline-none transition-all" />
-            <span class="text-sm text-red-500">{{ errors.repeatPassword }}</span>
+            <TextInput
+                type="password"
+                label-key="register.form.repeatPassword"
+                id="repeatPassword"
+                :error="errors.repeatPassword"
+                v-model="repeatPassword"
+                v-bind="repeatPasswordProps"
+            />
         </div>
 
-        <button
+        <Button
             type="submit"
-            class="w-full bg-primary rounded-4xl text-white py-2 px-4 transition-all"
-            :class="!meta.valid 
-            ? 'opacity-50 cursor-not-allowed text-gray-500' 
-            : 'hover:cursor-pointer hover:opacity-90'"
+            variant="primary"
             :disabled="!meta.valid"
-        >{{ $t('register.form.submit') }}</button>
+        >
+            {{ $t('register.form.submit') }}
+        </Button>
     </form>
 </template>
