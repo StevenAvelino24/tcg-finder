@@ -17,7 +17,7 @@
         .transform((val) => (val === '' ? undefined : val));
 
     const schema = toTypedSchema(z.object({
-        firstName: optionalString,
+        firstName: z.string($t('register.form.errors.first_name.not_blank')).min(2, $t('register.form.errors.first_name.not_long_enough')),
         lastName: optionalString,
         email: z.email($t('register.form.errors.email')),
         password: z.string($t('register.form.errors.password.not_blank')).min(8, $t('register.form.errors.password.not_long_enough')),
@@ -63,6 +63,9 @@
 
 <template>
     <form @submit="onSubmit" class="max-w-md mx-auto space-y-6 p-6 bg-white rounded-xl shadow-md border border-primary">
+        <div class="flex flex-col py-4 pe-2">
+            <h1 class="font-bold text-2xl text-center">{{ $t('register.form.title') }}</h1>
+        </div>
         <div class="grid grid-cols-2 gap-4">
             <div class="flex flex-col space-y-2">
                 <TextInput

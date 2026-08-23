@@ -1,4 +1,5 @@
 import tailwindcss from "@tailwindcss/vite";
+import { i18nPages } from './i18n/pages';
 
 export default defineNuxtConfig({
   future: { compatibilityVersion: 4 },
@@ -38,44 +39,7 @@ export default defineNuxtConfig({
       { code: 'it', name: 'Italiano', file: 'it.json' }
     ],
     customRoutes: 'config',
-    pages: {
-      'register': {
-        fr: '/s-inscrire',
-        en: '/register',
-        de: '/register',
-        it: '/register'
-      },
-      'search': {
-        fr: '/recherche',
-        en: '/search',
-        de: '/search',
-        it: '/search'
-      },
-      'login': {
-        fr: '/se-connecter',
-        en: '/login',
-        de: '/login',
-        it: '/login'
-      },
-      'profile': {
-        fr: '/profil',
-        en: '/profile',
-        de: '/profile',
-        it: '/profile'
-      },
-      'shop/create': {
-        fr: '/magasin/creer',
-        en: '/shop/create',
-        de: '/shop/create',
-        it: '/shop/create'
-      },
-      'shop/portal': {
-        fr: '/magasin/portail',
-        en: '/shop/portal',
-        de: '/shop/portal',
-        it: '/shop/portal'
-      }
-    }
+    pages: i18nPages
   },
   runtimeConfig: {
     sessionPassword: '',

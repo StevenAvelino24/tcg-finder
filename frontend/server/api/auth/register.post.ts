@@ -9,9 +9,10 @@ export default defineEventHandler(async (event) => {
         });
     }
     catch (error: any) {
+        console.log(error)
         throw createError({
             statusCode: error.response?.status || 500,
-            statusMessage: error.data,
+            statusMessage: 'An error ocurred',
             data: error.data
         });
     }

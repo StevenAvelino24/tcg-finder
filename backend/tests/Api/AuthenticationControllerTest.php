@@ -157,17 +157,17 @@ final class AuthenticationControllerTest extends AuthWebTestCase
         $this->assertTrue($user->getIsVerified());
     }
 
-    public function testResendVerificationEmailReturnsErrorIfNoUser(): void
+    public function testResendVerificationEmailSendsNoEmailIfNoUser(): void
     {
         $this->client->jsonRequest(
             'GET',
-            '/api/resend_verify_email?id=34892'
+            '/api/resend_verify_email?email=steven@outlook.com'
         );
 
-        $this->assertResponseStatusCodeSame(404);
+        $this->assertEmailCount(0);
     }
 
-    public function testResendVerificationEmailReturnsErrorIfUserAlreadyVerified(): void
+    public function testResendVerificationEmailSendsNoEmailIfUserAlreadyVerified(): void
     {
         $user = UserFactory::createOne([
             'email' => 'admin@admin.ch',
@@ -179,10 +179,10 @@ final class AuthenticationControllerTest extends AuthWebTestCase
 
         $this->client->jsonRequest(
             'GET',
-            '/api/resend_verify_email?id=' . (string) $user->getId()
+            '/api/resend_verify_email?email=' . $user->getEmail()
         );
 
-        $this->assertResponseStatusCodeSame(422);
+        $this->assertEmailCount(0);
     }
 
     public function testResendVerificationEmailSendsEmailIfUserNotVerified(): void
@@ -197,7 +197,7 @@ final class AuthenticationControllerTest extends AuthWebTestCase
 
         $this->client->jsonRequest(
             'GET',
-            '/api/resend_verify_email?id=' . (string) $user->getId()
+            '/api/resend_verify_email?email=' . $user->getEmail()
         );
 
         $this->assertResponseStatusCodeSame(200);

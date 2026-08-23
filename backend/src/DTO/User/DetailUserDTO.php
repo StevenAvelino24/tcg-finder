@@ -12,7 +12,7 @@ final class DetailUserDTO
         public string $email,
         public array $shops,
         public string $firstName,
-        public string $lastName,
+        public ?string $lastName,
         public array $roles,
     ) {}
 

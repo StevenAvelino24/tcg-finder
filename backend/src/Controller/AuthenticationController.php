@@ -86,14 +86,14 @@ final class AuthenticationController extends AbstractController
     #[Route('/resend_verify_email', name: 'resend_verify_email', methods: ['GET'])]
     public function resendVerifyEmail(Request $request): JsonResponse
     {
-        $user = $this->userRepository->find($request->query->get('id'));
+        $user = $this->userRepository->findOneBy(['email' => $request->query->getString('email')]);
 
-         if (!$user) {
-            return $this->json(null, Response::HTTP_NOT_FOUND);
+        if (!$user) {
+            return $this->json(null, Response::HTTP_OK);
         }
 
         if ($user->getIsVerified()) {
-            return $this->json(null, Response::HTTP_UNPROCESSABLE_ENTITY);
+            return $this->json(null, Response::HTTP_OK);
         }
 
         $this->sendVerificationEmail($user->getId(), $user->getEmail());
@@ -204,7 +204,8 @@ final class AuthenticationController extends AbstractController
             ->htmlTemplate('emails/verify_email.html.twig')
             ->context([
                 'userEmail' => $userEmail,
-                'signedUrl' => $this->params->get('app.frontend_url') . '/verify_email?' . parse_url($signatureComponents->getSignedUrl(), PHP_URL_QUERY),
+                'signedUrl' => $this->params->get('app.frontend_url') . '/api/auth/verify_email?' . parse_url($signatureComponents->getSignedUrl(), PHP_URL_QUERY),
+                'resendUrl' => $this->params->get('app.frontend_url') . '/api/auth/resend_verify_email?email=' . $userEmail,
             ]);
 
         $this->mailer->send($email);
