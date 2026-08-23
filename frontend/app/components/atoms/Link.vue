@@ -3,7 +3,8 @@
         to: string,
         variant: 'button' | 'link',
         color: 'primary' | 'secondary' | 'accent'
-        textSize: 'sm' | 'md' | 'lg'
+        textSize: 'sm' | 'md' | 'lg',
+        classes?: string
     }>();
 </script>
 
@@ -16,6 +17,7 @@
             color === 'primary' && 'bg-primary text-secondary hover:bg-secondary hover:text-primary',
             color === 'secondary' && 'bg-secondary text-white hover:bg-white hover:text-secondary',
             color === 'accent' && 'bg-accent text-secondary hover:bg-secondary hover:text-accent',
+            classes
         ]"
     >
         <slot />
@@ -28,7 +30,8 @@
             color === 'primary' && 'text-primary',
             color === 'secondary' && 'text-secondary',
             color === 'accent' && 'text-accent',
-            `text-${textSize}`
+            `text-${textSize}`,
+            classes
         ]"
     >
         <slot />
@@ -37,7 +40,8 @@
                 'h-0.5 w-0 group-hover:w-full transition-all duration-400',
                 color === 'primary' && 'bg-primary',
                 color === 'secondary' && 'bg-secondary',
-                color === 'accent' && 'bg-accent'
+                color === 'accent' && 'bg-accent',
+                classes
              ]"
         />
     </NuxtLinkLocale>

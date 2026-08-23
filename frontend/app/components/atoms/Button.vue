@@ -2,7 +2,8 @@
     defineProps<{
         disabled: boolean,
         variant: 'primary' | 'secondary' | 'accent',
-        type: 'button' | 'submit' | 'reset'
+        type: 'button' | 'submit' | 'reset',
+        classes?: string
     }>();
 </script>
 
@@ -17,7 +18,8 @@
             variant === 'secondary' && !disabled && 'bg-secondary text-white hover:bg-white hover:text-secondary hover:cursor-pointer',
             variant === 'secondary' && disabled && 'bg-[#7C8A92] text-[#E5E7EB]',
             variant === 'accent' && !disabled && 'bg-accent text-secondary hover:bg-secondary hover:text-accent hover:cursor-pointer',
-            variant === 'accent' && disabled && 'bg-[#F0B6A5] text-[#FFFFFF]'
+            variant === 'accent' && disabled && 'bg-[#F0B6A5] text-[#FFFFFF]',
+            classes
         ]"
     >
         <slot />
