@@ -47,27 +47,23 @@
 
 <template>
     <form @submit="onSubmit" class="max-w-md mx-auto space-y-6 p-6 bg-white rounded-xl shadow-md border border-primary">
-        <div class="flex flex-col space-y-2">
-            <TextInput
-                type="email"
-                label-key="login.form.email"
-                id="email"
-                :error="errors.username"
-                v-model="username"
-                v-bind="usernameProps"
-            />
-        </div>
+        <TextInput
+            type="email"
+            label-key="login.form.email"
+            id="email"
+            :error="errors.username"
+            v-model="username"
+            v-bind="usernameProps"
+        />
 
-        <div class="flex flex-col space-y-2">
-            <TextInput
-                type="password"
-                label-key="login.form.password"
-                id="password"
-                :error="errors.password"
-                v-model="password"
-                v-bind="passwordProps"
-            />
-        </div>
+        <TextInput
+            type="password"
+            label-key="login.form.password"
+            id="password"
+            :error="errors.password"
+            v-model="password"
+            v-bind="passwordProps"
+        />
 
         <Button
             type="submit"

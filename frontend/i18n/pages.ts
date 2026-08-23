@@ -8,7 +8,8 @@ interface I18nPages {
   search: LocalizedPaths,
   profile: LocalizedPaths,
   'shop/create': LocalizedPaths,
-  'shop/portal': LocalizedPaths
+  'shop/portal': LocalizedPaths,
+  'reset_password': LocalizedPaths
 }
 
 export const i18nPages: I18nPages = {
@@ -47,5 +48,11 @@ export const i18nPages: I18nPages = {
         en: '/shop/portal',
         de: '/shop/portal',
         it: '/shop/portal'
+    },
+    'reset_password': {
+        fr: '/reset_password',
+        en: '/reset_password',
+        de: '/reset_password',
+        it: '/reset_password'
     }
 };

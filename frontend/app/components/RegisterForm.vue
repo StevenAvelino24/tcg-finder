@@ -67,60 +67,50 @@
             <h1 class="font-bold text-2xl text-center">{{ $t('register.form.title') }}</h1>
         </div>
         <div class="grid grid-cols-2 gap-4">
-            <div class="flex flex-col space-y-2">
-                <TextInput
-                    type="text"
-                    label-key="register.form.firstname"
-                    id="firstname"
-                    :error="errors.firstName"
-                    v-model="firstName"
-                    v-bind="firstnameProps"
-                />
-            </div>
-            <div class="flex flex-col space-y-2">
-                <TextInput
-                    type="text"
-                    label-key="register.form.lastname"
-                    id="lastname"
-                    :error="errors.lastName"
-                    v-model="lastName"
-                    v-bind="lastnameProps"
-                />
-            </div>
-        </div>
-
-        <div class="flex flex-col space-y-2">
             <TextInput
-                type="email"
-                label-key="register.form.email"
-                id="email"
-                :error="errors.email"
-                v-model="email"
-                v-bind="emailProps"
+                type="text"
+                label-key="register.form.firstname"
+                id="firstname"
+                :error="errors.firstName"
+                v-model="firstName"
+                v-bind="firstnameProps"
+            />
+            <TextInput
+                type="text"
+                label-key="register.form.lastname"
+                id="lastname"
+                :error="errors.lastName"
+                v-model="lastName"
+                v-bind="lastnameProps"
             />
         </div>
 
-        <div class="flex flex-col space-y-2">
-            <TextInput
-                type="password"
-                label-key="register.form.password"
-                id="password"
-                :error="errors.password"
-                v-model="password"
-                v-bind="passwordProps"
-            />
-        </div>
+        <TextInput
+            type="email"
+            label-key="register.form.email"
+            id="email"
+            :error="errors.email"
+            v-model="email"
+            v-bind="emailProps"
+        />
 
-        <div class="flex flex-col space-y-2">
-            <TextInput
-                type="password"
-                label-key="register.form.repeatPassword"
-                id="repeatPassword"
-                :error="errors.repeatPassword"
-                v-model="repeatPassword"
-                v-bind="repeatPasswordProps"
-            />
-        </div>
+        <TextInput
+            type="password"
+            label-key="register.form.password"
+            id="password"
+            :error="errors.password"
+            v-model="password"
+            v-bind="passwordProps"
+        />
+
+        <TextInput
+            type="password"
+            label-key="register.form.repeatPassword"
+            id="repeatPassword"
+            :error="errors.repeatPassword"
+            v-model="repeatPassword"
+            v-bind="repeatPasswordProps"
+        />
 
         <Button
             type="submit"

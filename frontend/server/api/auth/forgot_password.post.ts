@@ -3,7 +3,7 @@ export default defineEventHandler(async (event) => {
     const config = useRuntimeConfig();
 
     try {
-        return await $fetch(`${config.public.apiInternal}/register`, {
+        return await $fetch(`${config.public.apiInternal}/forgot_password`, {
             method: 'POST',
             body: body
         });

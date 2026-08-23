@@ -1,6 +1,7 @@
 <script setup lang="ts">
     import type { LocationQueryValue } from 'vue-router';
-import Link from '~/components/atoms/Link.vue';
+    import Link from '~/components/atoms/Link.vue';
+    import ForgotPassword from '~/components/organisms/ForgotPassword.vue';
 
     const route = useRoute();
     const { addToast } = useToast();
@@ -44,17 +45,8 @@ import Link from '~/components/atoms/Link.vue';
                 {{ $t('login.to_register') }}
             </Link>
         </div>
-        <div class="max-w-md mx-auto text-center">
-            <GeneralDialog
-                :trigger="$t('login.resend_validation')"
-                :title="$t('login.resend_validation.title')"
-                :description="$t('login.resend_validation.desc')"
-                trigger-class=""
-            >
-                <template v-slot:content>
-                    Test
-                </template>
-            </GeneralDialog>
+        <div class="max-w-md mx-auto flex justify-center">
+            <ForgotPassword />
         </div>
     </section>
 </template>
