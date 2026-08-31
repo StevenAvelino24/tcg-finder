@@ -1,5 +1,5 @@
 <script setup lang="ts">
-    import Select from './atoms/Select.vue'
+    import Select from '~/components/atoms/Select.vue'
 
     const { locale, locales } = useI18n();
     const switchLocalePath = useSwitchLocalePath();
