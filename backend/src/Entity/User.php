@@ -36,7 +36,8 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         mappedBy: 'user',
         targetEntity: Shop::class,
         cascade: ['persist', 'remove'],
-        orphanRemoval: true
+        orphanRemoval: true,
+        fetch: 'LAZY'
     )]
     private Collection $shops;
 

@@ -344,4 +344,110 @@ final class AuthenticationControllerTest extends AuthWebTestCase
         $user = $this->userRepository->findOneBy(['email' => 'user@admin.ch']);
         $this->assertNull($user);
     }
+
+    public function testAdminListReturnsErrorIfNotAdmin(): void
+    {
+        $this->authenticate('user@admin.ch', 'Password1234');
+
+        $this->client->jsonRequest(
+            'GET',
+            '/api/admin/users'
+        );
+
+        $this->assertResponseStatusCodeSame(403);
+    }
+
+    public function testAdminListReturnsVerifiedUsersIfAdmin(): void
+    {
+        $this->authenticate('user@admin.ch', 'Password1234', ['ROLE_ADMIN']);
+
+        UserFactory::createMany(5, [
+            'isVerified' => true
+        ]);
+
+        UserFactory::createMany(2, [
+            'isVerified' => false
+        ]);
+
+        $this->client->jsonRequest(
+            'GET',
+            '/api/admin/users?page=1&limit=25'
+        );
+
+        $this->assertResponseStatusCodeSame(200);
+
+        $data = json_decode($this->client->getResponse()->getContent(), true);
+
+        $this->assertSame($data['total'], 6);
+    }
+
+    public function testAdminListReturnsUsersMatchingTheSearchOnly(): void
+    {
+        $this->authenticate('user@admin.ch', 'Password1234', ['ROLE_ADMIN']);
+
+        UserFactory::createOne([
+            'isVerified' => true,
+            'email' => 'erica@admin.ch',
+            'password' => 'password123',
+            'firstName' => 'Test',
+            'lastName' => 'Test',
+        ]);
+        UserFactory::createOne([
+            'isVerified' => true,
+            'email' => 'steven@admin.ch',
+            'password' => 'password123',
+            'firstName' => 'Test',
+            'lastName' => 'Test',
+        ]);
+
+        $this->client->jsonRequest(
+            'GET',
+            '/api/admin/users?page=1&limit=25&search=steve'
+        );
+
+        $this->assertResponseStatusCodeSame(200);
+        $data = json_decode($this->client->getResponse()->getContent(), true);
+        $this->assertSame($data['total'], 1);
+    }
+
+    public function testAdminDeleteReturnsAnErrorIfUserNotAdmin(): void
+    {
+        $this->authenticate('user@admin.ch', 'Password1234');
+
+        $user = UserFactory::createOne([
+            'isVerified' => true,
+            'email' => 'steven@admin.ch',
+            'password' => 'password123',
+            'firstName' => 'Test',
+            'lastName' => 'Test',
+        ]);
+
+        $this->client->jsonRequest(
+            'DELETE',
+            '/api/admin/users/delete/' . $user->getId()
+        );
+
+        $this->assertResponseStatusCodeSame(403);
+    }
+
+    public function testAdminDeleteRemovesTheCorrectUser(): void
+    {
+        $this->authenticate('user@admin.ch', 'Password1234', ['ROLE_ADMIN']);
+
+        $user = UserFactory::createOne([
+            'isVerified' => true,
+            'email' => 'steven@admin.ch',
+            'password' => 'password123',
+            'firstName' => 'Test',
+            'lastName' => 'Test',
+        ]);
+
+        $this->client->jsonRequest(
+            'DELETE',
+            '/api/admin/users/delete/' . $user->getId()
+        );
+
+        $this->assertResponseStatusCodeSame(204);
+        $this->assertSame($this->userRepository->findOneBy(['id' => $user->getId()]), null);
+    }
 }

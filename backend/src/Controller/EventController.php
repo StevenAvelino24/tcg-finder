@@ -26,14 +26,39 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 #[Route('/api', name: 'events_')]
 final class EventController extends AbstractController
 {
+    public function __construct(
+        protected readonly EventRepository $eventRepository,
+        protected readonly EntityManagerInterface $entityManager,
+        protected readonly EventServiceInterface $eventService,
+        protected readonly ParticipantServiceInterface $participantService,
+        protected readonly ParticipantRepository $participantRepository
+    ) {}
+
     #[Route('/admin/events', name: 'list', methods: ['GET'])]
-    public function list(EventRepository $eventRepository): JsonResponse
+    public function list(Request $request): JsonResponse
     {
+        $page = max(1, $request->query->getInt('page', 1));
+        $limit = min(100, max(1, $request->query->getInt('limit', 25)));
+        $search = $request->query->getString('search', '');
+        $shopId = $request->query->getInt('shop_id');
+        $gameId = $request->query->getInt('game_id');
+
+        $events = $this->eventRepository->findBySearch(
+            $page,
+            $limit,
+            $search,
+            $shopId,
+            $gameId
+        );
+
         return $this->json(
-            array_map(
-                fn (Event $event) => DetailEventDTO::fromEntity($event),
-                $eventRepository->findAll()
-            ),
+            [
+                'events' => array_map(
+                    fn (Event $event) => DetailEventDTO::fromEntity($event),
+                    $events['data']
+                ),
+                'total' => $events['total']
+            ],   
             Response::HTTP_OK
         );
     }
@@ -41,7 +66,6 @@ final class EventController extends AbstractController
     #[Route('/backend/shops/{slug}/events', name: 'shop_list', methods: ['GET'])]
     public function shopList(
         #[MapEntity(mapping: ['slug' => 'slug'])] Shop $shop,
-        EventRepository $eventRepository
     ): JsonResponse {
         if (!$shop || !$shop->getEnabled()) {
             return $this->json(null, Response::HTTP_FORBIDDEN);
@@ -50,7 +74,7 @@ final class EventController extends AbstractController
         return $this->json(
             array_map(
                 fn (Event $event) => DetailEventDTO::fromEntity($event),
-                $eventRepository->findByShop($shop->getId())
+                $this->eventRepository->findByShop($shop->getId())
             ),
             Response::HTTP_OK
         );
@@ -69,18 +93,16 @@ final class EventController extends AbstractController
 
     #[Route('/backend/events', name: 'create', methods: ['POST'])]
     public function create(
-        #[MapRequestPayload()] CreateEventDTO $dto,
-        EventServiceInterface $eventService,
-        EntityManagerInterface $entityManager
+        #[MapRequestPayload()] CreateEventDTO $dto
     ): JsonResponse {
-        $event = $eventService->createFromDTO($dto);
+        $event = $this->eventService->createFromDTO($dto);
 
         if (!$event) {
             return $this->json(null, Response::HTTP_FORBIDDEN);
         }
 
-        $entityManager->persist($event);
-        $entityManager->flush();
+        $this->entityManager->persist($event);
+        $this->entityManager->flush();
 
         return $this->json(
             DetailEventDTO::fromEntity($event),
@@ -93,12 +115,10 @@ final class EventController extends AbstractController
     public function update(
         #[MapEntity(mapping: ['slug' => 'slug'])] Event $event,
         #[MapRequestPayload] CreateEventDTO $dto,
-        EventServiceInterface $eventService,
-        EntityManagerInterface $entityManager
     ): JsonResponse {
-        $eventService->updateFromDTO($dto, $event);
+        $this->eventService->updateFromDTO($dto, $event);
 
-        $entityManager->flush();
+        $this->entityManager->flush();
 
         return $this->json(
             DetailEventDTO::fromEntity($event),
@@ -110,10 +130,9 @@ final class EventController extends AbstractController
     #[Route('/backend/events/{slug}', name: 'delete', methods: ['DELETE'])]
     public function delete(
         #[MapEntity(mapping: ['slug' => 'slug'])] Event $event,
-        EntityManagerInterface $entityManager
     ): JsonResponse {
-        $entityManager->remove($event);
-        $entityManager->flush();
+        $this->entityManager->remove($event);
+        $this->entityManager->flush();
 
         return $this->json(null, Response::HTTP_NO_CONTENT);
     }
@@ -122,10 +141,8 @@ final class EventController extends AbstractController
     public function register(
         #[MapEntity(mapping: ['slug' => 'slug'])] Event $event,
         #[MapRequestPayload] CreateParticipantDTO $dto,
-        EntityManagerInterface $entityManager,
-        ParticipantServiceInterface $participantService
     ): JsonResponse {
-        $entityManager->beginTransaction();
+        $this->entityManager->beginTransaction();
 
         try {
             if ($event->getNumberParticipants() <= $event->getParticipants()->count()) {
@@ -138,13 +155,13 @@ final class EventController extends AbstractController
                 return $this->json(null, Response::HTTP_FORBIDDEN);
             }
 
-            $participant = $participantService->createFromDTO($dto, $event);
+            $participant = $this->participantService->createFromDTO($dto, $event);
 
-            $entityManager->persist($participant);
-            $entityManager->flush();
-            $entityManager->commit();
+            $this->entityManager->persist($participant);
+            $this->entityManager->flush();
+            $this->entityManager->commit();
         } catch (Exception $e) {
-            $entityManager->rollback();
+            $this->entityManager->rollback();
 
             return $this->json(null, Response::HTTP_FORBIDDEN);
         }
@@ -153,25 +170,21 @@ final class EventController extends AbstractController
     }
 
     #[Route('/events/unregister', name: 'unregister', methods: ['DELETE'])]
-    public function unregister(
-        Request $request,
-        EntityManagerInterface $entityManager,
-        ParticipantRepository $participantRepository
-    ): JsonResponse {
+    public function unregister(Request $request): JsonResponse {
         $token = $request->query->get('token');
 
         if (!$token) {
             return $this->json(null, Response::HTTP_FORBIDDEN);
         }
 
-        $participant = $participantRepository->findOneBy(['unregisterToken' => $token]);
+        $participant = $this->participantRepository->findOneBy(['unregisterToken' => $token]);
 
         if (!$participant) {
             return $this->json(null, Response::HTTP_FORBIDDEN);
         }
 
-        $entityManager->remove($participant);
-        $entityManager->flush();
+        $this->entityManager->remove($participant);
+        $this->entityManager->flush();
 
         return $this->json(null, Response::HTTP_NO_CONTENT);
     }

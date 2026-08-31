@@ -12,6 +12,7 @@ use DateTimeImmutable;
 final class DetailEventDTO
 {
     public function __construct(
+        public int $id,
         public string $name,
         public DetailGameDTO $game,
         public string $format,
@@ -29,6 +30,7 @@ final class DetailEventDTO
     public static function fromEntity(Event $event): self
     {
         return new self(
+            id: $event->getId(),
             name: $event->getName(),
             game: DetailGameDTO::fromEntity($event->getGame()),
             format: $event->getFormat(),

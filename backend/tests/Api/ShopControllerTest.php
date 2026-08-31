@@ -62,7 +62,7 @@ final class ShopControllerTest extends AuthWebTestCase
         );
     }
 
-    public function testShopListReturnsErrorIfNotAdmin(): void
+    public function testAdminShopListReturnsErrorIfNotAdmin(): void
     {
         $this->authenticate('user@tcg.ch', 'Password1234');
 
@@ -74,7 +74,7 @@ final class ShopControllerTest extends AuthWebTestCase
         $this->assertResponseStatusCodeSame(403);
     }
 
-    public function testShopListReturnsAllShopsIfAdmin(): void
+    public function testAdminShopListReturnsPaginatedShops(): void
     {
         $this->authenticate('user@tcg.ch', 'Password1234', ['ROLE_ADMIN']);
         $user = $this->userRepository->findOneBy(['email' => 'user@tcg.ch']);
@@ -89,7 +89,44 @@ final class ShopControllerTest extends AuthWebTestCase
 
         $data = json_decode($this->client->getResponse()->getContent(), true);
 
-        $this->assertCount(1, $data);
+        $this->assertCount(1, $data['shops']);
+    }
+
+    public function testAdminShopListReturnsOnlyMatchingSearchedShops(): void
+    {
+        $this->authenticate('user@tcg.ch', 'Password1234', ['ROLE_ADMIN']);
+        $user = $this->userRepository->findOneBy(['email' => 'user@tcg.ch']);
+        ShopFactory::createOne(['user' => $user, 'title' => 'Bankai']);
+        ShopFactory::createOne(['user' => $user, 'title' => 'Rasengan']);
+
+        $this->client->jsonRequest(
+            'GET',
+            '/api/admin/shops?search=Bank'
+        );
+
+        $this->assertResponseStatusCodeSame(200);
+
+        $data = json_decode($this->client->getResponse()->getContent(), true);
+
+        $this->assertCount(1, $data['shops']);
+        $this->assertSame($data['shops'][0]['title'], 'Bankai');
+    }
+
+    public function testAdminDeleteReturnsSuccess(): void
+    {
+        $this->authenticate('user@tcg.ch', 'Password1234', ['ROLE_ADMIN']);
+        $user = $this->userRepository->findOneBy(['email' => 'user@tcg.ch']);
+        $shop = ShopFactory::createOne(['user' => $user, 'title' => 'Bankai']);
+
+        $this->client->jsonRequest(
+            'DELETE',
+            '/api/backend/shops/' . $shop->getSlug()
+        );
+
+        $this->assertResponseStatusCodeSame(204);
+
+        $updatedShop = $this->shopRepository->findOneBy(['slug' => $shop->getSlug()]);
+        $this->assertNull($updatedShop);
     }
 
     public function testShopEnableReturnsErrorIfNotAdmin(): void
@@ -114,7 +151,7 @@ final class ShopControllerTest extends AuthWebTestCase
 
         $this->client->jsonRequest(
             'PUT',
-            '/api/admin/shops/' . $shop->getSlug() . '/enable'
+            '/api/admin/shops/' . $shop->getId() . '/enable'
         );
 
         $this->assertResponseStatusCodeSame(200);
@@ -131,7 +168,7 @@ final class ShopControllerTest extends AuthWebTestCase
 
         $this->client->jsonRequest(
             'PUT',
-            '/api/admin/shops/' . $shop->getSlug() . '/disable'
+            '/api/admin/shops/' . $shop->getId() . '/disable'
         );
 
         $this->assertResponseStatusCodeSame(403);
@@ -145,7 +182,7 @@ final class ShopControllerTest extends AuthWebTestCase
 
         $this->client->jsonRequest(
             'PUT',
-            '/api/admin/shops/' . $shop->getSlug() . '/disable'
+            '/api/admin/shops/' . $shop->getId() . '/disable'
         );
 
         $this->assertResponseStatusCodeSame(200);

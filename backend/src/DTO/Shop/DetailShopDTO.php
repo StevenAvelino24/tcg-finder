@@ -13,6 +13,7 @@ use DateTimeImmutable;
 final class DetailShopDTO
 {
     public function __construct(
+        public int $id,
         public string $slug,
         public string $title,
         public string $address,
@@ -43,6 +44,7 @@ final class DetailShopDTO
         }
 
         return new self(
+            id: $shop->getId(),
             slug: $shop->getSlug(),
             title: $shop->getTitle(),
             address: $shop->getAddress(),

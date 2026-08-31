@@ -79,21 +79,117 @@ final class EventControllerTest extends AuthWebTestCase
         $this->assertResponseStatusCodeSame(403);
     }
 
-    public function testListEventsReturnsAllEventsIfAdmin(): void
+    public function testListEventsReturnsPaginatedEventsIfAdminAndNoSearch(): void
     {
-        EventFactory::createOne();
+        EventFactory::createMany(10);
         $this->authenticate('user@tcg.ch', 'Password1234', ['ROLE_ADMIN']);
 
         $this->client->jsonRequest(
             'GET',
-            '/api/admin/events'
+            '/api/admin/events?page=1&limit=5'
         );
 
         $this->assertResponseStatusCodeSame(200);
 
         $data = json_decode($this->client->getResponse()->getContent(), true);
 
-        $this->assertCount(1, $data);
+        $this->assertSame(count($data['events']), 5);
+    }
+
+    public function testListEventReturnsEventsIfSearchMatches(): void
+    {
+        $this->authenticate('user@tcg.ch', 'Password1234', ['ROLE_ADMIN']);
+        $user = $this->userRepository->findOneBy(['email' => 'user@tcg.ch']);
+        $shop = ShopFactory::createOne(['user' => $user, 'enabled' => true]);
+
+        EventFactory::createOne(['name' => 'Tournoi Gaga', 'shop' => $shop]);
+        EventFactory::createOne(['name' => 'Tournoi Baba', 'shop' => $shop]);
+
+        $this->client->jsonRequest(
+            'GET',
+            '/api/admin/events?search=Gaga'
+        );
+
+        $this->assertResponseStatusCodeSame(200);
+
+        $data = json_decode($this->client->getResponse()->getContent(), true);
+
+        $this->assertSame($data['total'], 1);
+        $this->assertSame($data['events'][0]['name'], 'Tournoi Gaga');
+    }
+
+    public function testListEventReturnsEventsByShop(): void
+    {
+        $this->authenticate('user@tcg.ch', 'Password1234', ['ROLE_ADMIN']);
+        $user = $this->userRepository->findOneBy(['email' => 'user@tcg.ch']);
+        $shop = ShopFactory::createOne(['user' => $user, 'enabled' => true]);
+        $shop2 = ShopFactory::createOne(['user' => $user, 'enabled' => true]);
+
+        EventFactory::createOne(['name' => 'Tournoi Gaga', 'shop' => $shop]);
+        EventFactory::createOne(['name' => 'Tournoi Baba', 'shop' => $shop2]);
+
+        $this->client->jsonRequest(
+            'GET',
+            '/api/admin/events?shop_id=' . $shop->getId()
+        );
+        
+        $this->assertResponseStatusCodeSame(200);
+
+        $data = json_decode($this->client->getResponse()->getContent(), true);
+
+        $this->assertSame(count($data['events']), 1);
+        $this->assertSame($data['events'][0]['shop']['title'], $shop->getTitle());
+    }
+
+    public function testListEventReturnsEventsByGame(): void
+    {
+        $this->authenticate('user@tcg.ch', 'Password1234', ['ROLE_ADMIN']);
+        $game = GameFactory::createOne();
+        $game2 = GameFactory::createOne();
+
+        EventFactory::createOne(['name' => 'Tournoi Gaga', 'game' => $game]);
+        EventFactory::createOne(['name' => 'Tournoi Baba', 'game' => $game2]);
+
+        $this->client->jsonRequest(
+            'GET',
+            '/api/admin/events?game_id=' . $game->getId()
+        );
+        
+        $this->assertResponseStatusCodeSame(200);
+
+        $data = json_decode($this->client->getResponse()->getContent(), true);
+
+        $this->assertSame(count($data['events']), 1);
+        $this->assertSame($data['events'][0]['game']['name'], $game->getName());
+    }
+
+    public function testAdminDeleteReturnsErrorIfUserNotAdmin(): void
+    {
+        $this->authenticate('user@tcg.ch', 'Password1234');
+
+        $event = EventFactory::createOne();
+
+        $this->client->jsonRequest(
+            'DELETE',
+            '/api/backend/events/' . $event->getSlug()
+        );
+
+        $this->assertResponseStatusCodeSame(403);
+    }
+
+    public function testAdminDeleteSuccessfullyDeleteEvent(): void
+    {
+        $this->authenticate('user@tcg.ch', 'Password1234', ['ROLE_ADMIN']);
+
+        $event = EventFactory::createOne();
+
+        $this->client->jsonRequest(
+            'DELETE',
+            '/api/backend/events/' . $event->getSlug()
+        );
+
+        $this->assertResponseStatusCodeSame(204);
+        $this->assertSame($this->eventRepository->findOneBy(['id' => $event->getId()]), null);
     }
 
     public function testListByShopEventsReturnsAnErrorIfNotLoggedIn(): void

@@ -25,6 +25,7 @@ use Symfony\Component\Routing\Attribute\Route;
 use SymfonyCasts\Bundle\ResetPassword\ResetPasswordHelperInterface;
 use SymfonyCasts\Bundle\VerifyEmail\VerifyEmailHelperInterface;
 use SymfonyCasts\Bundle\ResetPassword\Exception\ResetPasswordExceptionInterface;
+use Symfony\Bridge\Doctrine\Attribute\MapEntity;
 
 #[Route('/api', name: 'auth_')]
 final class AuthenticationController extends AbstractController
@@ -38,6 +39,46 @@ final class AuthenticationController extends AbstractController
         protected readonly ParameterBagInterface $params,
         protected readonly ResetPasswordHelperInterface $resetPasswordHelper
     ) {}
+
+    #[Route('/admin/users', name: 'list', methods: ['GET'])]
+    public function list(
+        Request $request
+    ): JsonResponse
+    {
+        $page = max(1, $request->query->getInt('page', 1));
+        $limit = min(100, max(1, $request->query->getInt('limit', 25)));
+        $search = $request->query->getString('search', '');
+        $verified = $request->query->getBoolean('verified', true);
+
+        $users = $this->userRepository->findSearchAndPaginated(
+            $page,
+            $limit,
+            $search === '' ? null : $search,
+            $verified
+        );
+
+        return $this->json(
+            [
+                'users' => array_map(
+                    fn (User $user) => DetailUserDTO::fromEntity($user),
+                    $users['data']
+                ),
+                'total' => $users['total']
+            ],
+            Response::HTTP_OK
+        );
+    }
+
+    #[Route('/admin/users/delete/{id}', name: 'admin_delete', methods: ['DELETE'])]
+    public function adminDelete(
+        #[MapEntity(mapping: ['id' => 'id'])] User $user,
+    ): JsonResponse
+    {
+        $this->entityManager->remove($user);
+        $this->entityManager->flush();
+
+        return $this->json(null, Response::HTTP_NO_CONTENT);
+    }
 
     #[Route('/register', name: 'register', methods: ['POST'])]
     public function register(
