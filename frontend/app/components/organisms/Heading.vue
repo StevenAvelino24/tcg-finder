@@ -2,6 +2,7 @@
     import LangSwitcher from '~/components/molecules/LangSwitcher.vue';
     import Link from '~/components/atoms/Link.vue';
     import MobileHeader from '~/components/organisms/MobileHeader.vue';
+    import NavBar from '../molecules/NavBar.vue';
 
     const { isLoggedIn } = useUser();
     const mobileMenuOpened = ref(false);

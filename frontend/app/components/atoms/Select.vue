@@ -1,13 +1,13 @@
 <script setup lang="ts">
     defineProps<{
-        options: {label: string, value: string}[],
+        options: {label: string, value: string|number}[],
         currentValue?: string
         placeholder?: string
         label?: string
         id?: string
     }>();
 
-    const model = defineModel<string>();
+    const model = defineModel<string|number>();
 </script>
 
 <template>

@@ -2,7 +2,7 @@ export default defineEventHandler(async (event) => {
     const config = useRuntimeConfig();
 
     try {
-        return await authFetch(event, `${config.public.apiInternal}/backend/user`, {
+        await authFetch(event, `${config.public.apiInternal}/backend/user`, {
             method: 'DELETE',
         });
         const cookie = getCookie(event, 'tcg_finder_token');

@@ -10,7 +10,7 @@ export default defineEventHandler(async (event) => {
 
         setCookie(event, 'tcg_finder_token', response.token, {
             httpOnly: true,
-            secure: false,
+            secure: true,
             sameSite: 'lax',
             maxAge: 60 * 60 * 24
         });
