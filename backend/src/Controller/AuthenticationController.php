@@ -63,7 +63,7 @@ final class AuthenticationController extends AbstractController
                     fn (User $user) => DetailUserDTO::fromEntity($user),
                     $users['data']
                 ),
-                'total' => $users['total']
+                'total' => $users['total'],
             ],
             Response::HTTP_OK
         );

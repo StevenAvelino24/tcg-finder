@@ -15,6 +15,7 @@ final class DetailUserDTO
         public string $firstName,
         public ?string $lastName,
         public array $roles,
+        public bool $isVerified
     ) {}
 
     public static function fromEntity(User $user): self
@@ -29,6 +30,7 @@ final class DetailUserDTO
             firstName: $user->getFirstName(),
             lastName: $user->getLastName(),
             roles: $user->getRoles(),
+            isVerified: $user->getIsVerified()
         );
     }
 }
