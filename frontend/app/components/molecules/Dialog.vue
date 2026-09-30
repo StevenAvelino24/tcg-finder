@@ -8,7 +8,7 @@
 </script>
 
 <template>
-    <DialogRoot v-model:open="opened"">
+    <DialogRoot v-model:open="opened">
         <slot name="trigger"></slot>
         <DialogPortal>
             <DialogOverlay class="bg-gray-600 opacity-60 data-[state=open]:animate-overlayShow fixed inset-0 z-200"></DialogOverlay>
@@ -20,9 +20,8 @@
                     {{ description }}
                 </DialogDescription>
                 <slot name="content"></slot>
-            <DialogClose>
-                
-            </DialogClose>
+                <DialogClose>
+                </DialogClose>
             </DialogContent>
         </DialogPortal>
     </DialogRoot>

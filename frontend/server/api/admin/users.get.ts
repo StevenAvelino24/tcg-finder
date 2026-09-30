@@ -11,7 +11,7 @@ export default defineEventHandler(async (event) => {
     catch (error: any) {
         throw createError({
             statusCode: 500,
-            statusMessage: 'Failed to fetch games from backend'
+            statusMessage: 'Failed to fetch users from backend'
         });
     }
 });

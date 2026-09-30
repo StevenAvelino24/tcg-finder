@@ -1,10 +1,13 @@
 <script setup lang="ts">
     import { refDebounced } from '@vueuse/core'
+    import Button from '~/components/atoms/Button.vue';
     import Select from '~/components/atoms/Select.vue';
     import TextInput from '~/components/atoms/TextInput.vue';
     import Pagination from '~/components/molecules/Pagination.vue';
     import Table from '~/components/molecules/Table.vue';
     import type { User } from '~/types/user';
+
+    const { addToast } = useToast();
 
     interface UsersResponse {
         users: Array<User>,
@@ -21,7 +24,7 @@
     const search = refDebounced(searchInput, 400);
     const verified = ref(1);
 
-    const { data } = await useFetch<UsersResponse>('/api/admin/users', {
+    const { data, refresh } = await useFetch<UsersResponse>('/api/admin/users', {
         method: 'GET',
         query: { page, limit, search, verified },
         watch: [page, limit, search, verified]
@@ -30,6 +33,26 @@
     watch([search, limit, verified], () => {
         page.value = 1;
     })
+
+    const deleteUser = async (userId: number) => {
+        try {
+            await $fetch('/api/admin/users/delete/' + userId);
+
+            addToast({
+                title: $t('admin.users.delete.success.title'),
+                description: $t('admin.users.delete.success.desc'),
+                type: 'success'
+            });
+
+            await refresh();
+        } catch (err: any) {
+            addToast({
+                title: $t('admin.users.delete.error.title'),
+                description: $t('admin.users.delete.error.desc'),
+                type: 'error'
+            });
+        }
+    }
 </script>
 
 <template>
@@ -72,9 +95,20 @@
                 <td>{{ user.email }}</td>
                 <td>{{ user.firstName }}</td>
                 <td>{{ user.lastName }}</td>
-                <td>Shops</td>
+                <td>
+                    {{ user.shops.length > 0 ? user.shops.map((shop) => { shop.title + ', '}) : '' }}
+                </td>
                 <td>{{ user.isVerified }}</td>
-                <td></td>
+                <td>
+                    <Button
+                        type="button"
+                        variant="accent"
+                        :disabled="false"
+                        @click="deleteUser(user.id)"
+                    >
+                        Delete
+                    </Button>
+                </td>
             </tr>
         </Table>
         <Pagination
