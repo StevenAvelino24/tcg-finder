@@ -1,4 +1,4 @@
-# Use the official FrankenPHP image with PHP 8.3 and Debian Bookworm base
+# Use the official FrankenPHP image with PHP 8.5 and Debian Bookworm base
 FROM dunglas/frankenphp:php8.5
 
 # Install system libraries
@@ -18,11 +18,8 @@ RUN install-php-extensions \
     gd \
     pdo \
     pdo_pgsql \
-    zip
-
-# 2. Install PHP Extensions (for PostgreSQL)
-# The FrankenPHP base image provides a script for easy extension installation.
-RUN install-php-extensions pdo pdo_pgsql zip
+    zip \
+    intl
 
 COPY . /app
 

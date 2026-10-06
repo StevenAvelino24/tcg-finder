@@ -26,6 +26,12 @@ services:
       resources:
         limits:
           memory: 1.5G
+    environment:
+      FRANKENPHP_CONFIG: |
+        worker {
+          file /app/public/index.php
+          watch /app
+        }
     healthcheck:
       test: ['CMD', 'curl', '-f', 'http://127.0.0.1']
       interval: 10s
