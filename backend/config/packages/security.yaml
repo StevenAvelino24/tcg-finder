@@ -17,17 +17,6 @@ security:
             pattern: ^/(_profiler|_wdt|assets|build)/
             security: false
 
-        api:
-            pattern:   ^/api
-            stateless: true
-            jwt: ~
-
-            json_login:
-                check_path: /api/login_check
-                success_handler: lexik_jwt_authentication.handler.authentication_success
-                failure_handler: lexik_jwt_authentication.handler.authentication_failure
-            user_checker: App\Security\Checker\UserChecker
-
     # Note: Only the *first* matching rule is applied
     access_control:
         - { path: ^/api/admin, roles: ROLE_ADMIN}

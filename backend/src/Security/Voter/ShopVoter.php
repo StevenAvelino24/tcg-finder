@@ -5,6 +5,7 @@ namespace App\Security\Voter;
 use App\Entity\Shop;
 use App\Entity\User;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
+use Symfony\Component\Security\Core\Authorization\Voter\Vote;
 use Symfony\Component\Security\Core\Authorization\Voter\Voter;
 
 class ShopVoter extends Voter
@@ -22,7 +23,8 @@ class ShopVoter extends Voter
     protected function voteOnAttribute(
         string $attribute,
         mixed $subject,
-        TokenInterface $token
+        TokenInterface $token,
+        ?Vote $vote = null
     ): bool {
         $user = $token->getUser();
 

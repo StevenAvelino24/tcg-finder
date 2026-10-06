@@ -6,6 +6,7 @@ use App\Entity\Event;
 use App\Entity\User;
 use App\Entity\Shop;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
+use Symfony\Component\Security\Core\Authorization\Voter\Vote;
 use Symfony\Component\Security\Core\Authorization\Voter\Voter;
 
 class EventVoter extends Voter
@@ -22,7 +23,8 @@ class EventVoter extends Voter
     protected function voteOnAttribute(
         string $attribute,
         mixed $subject,
-        TokenInterface $token
+        TokenInterface $token,
+        ?Vote $vote = null
     ): bool {
         $user = $token->getUser();
 

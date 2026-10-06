@@ -22,11 +22,3 @@ services:
     App\EventSubscriber\ParticipantCreatedSubscriber:
         tags:
             - { name: doctrine.event_listener, event: postPersist }
-
-    # add more service definitions when explicit configuration is needed
-    # please note that last definitions always *replace* previous ones
-    Elastic\Elasticsearch\Client:
-        factory: [Elastic\Elasticsearch\ClientBuilder, fromConfig]
-        arguments:
-            -
-                hosts: ['%env(ELASTICSEARCH_URL)%']

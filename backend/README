@@ -16,12 +16,6 @@ docker-compose exec app php bin/console doctrine:database:create
 docker-compose exec app php bin/console make:migration:migrate
 ```
 
-Create the keys to create JWT tokens
-
-```
-docker-compose exec app php bin/console lexik:jwt:generate-keypair
-```
-
 ### Possible issues
 
 If you have issues with the SSL certificate locally

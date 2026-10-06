@@ -4,7 +4,6 @@ networks:
 
 volumes:
   db_data:
-  es_data:
 
 services:
   symfony:
@@ -23,7 +22,6 @@ services:
       - symfony_net
     depends_on:
       - db
-      - es
     deploy:
       resources:
         limits:
@@ -35,7 +33,7 @@ services:
       retries: 5
 
   db:
-    image: postgres:16-alpine
+    image: postgis/postgis:16-3.4
     container_name: symfony_postgres_db
     restart: unless-stopped
     environment:
@@ -56,41 +54,6 @@ services:
       timeout: 5s
       retries: 5
 
-  es:
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.12.0 # Use a specific, recent 8.x version
-    container_name: symfony_elasticsearch
-    restart: unless-stopped
-    environment:
-      # Required settings for single-node development
-      - node.name=es
-      - cluster.name=symfony-cluster
-      - discovery.type=single-node
-      # Set basic security for development (user: elastic, pass: changeme)
-      - xpack.security.enabled=true
-      - ELASTIC_PASSWORD=changeme
-      - http.host=0.0.0.0
-      - transport.host=0.0.0.0
-      # Allow memory locking
-      - bootstrap.memory_lock=true
-      # Set JVM heap size for development (adjust in production)
-      - 'ES_JAVA_OPTS=-Xms1536m -Xmx1536m'
-    ulimits:
-      memlock:
-        soft: -1
-        hard: -1
-    volumes:
-      - es_data:/usr/share/elasticsearch/data
-    networks:
-      - symfony_net
-    deploy:
-      resources:
-        limits:
-          memory: 3G
-    healthcheck:
-      test: ["CMD-SHELL", "curl -s http://elastic:changeme@localhost:9200/_cat/health | grep -q green"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
   mailer:
     image: axllent/mailpit
     container_name: symfony_mailer
