@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <title>{% block title %}TCG Finder{% endblock %}</title>
+        {% block javascripts %}
+            {% block importmap %}{{ importmap('app') }}{% endblock %}
+        {% endblock %}
+    </head>
+    <body>
+        <header>
+
+        </header>
+        <main>
+             {% block main %}
+             {% endblock %}
+        </main>
+        <footer>
+            
+        </footer>
+    </body>
+</html>
