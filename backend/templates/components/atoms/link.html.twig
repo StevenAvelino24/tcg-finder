@@ -1,0 +1,7 @@
+<a
+    href="{{ href }}"
+    {{ attributes.defaults({ class: "block p-0 text-#{textSize} group w-fit hover:text-#{color} transition-colors duration-400 #{classes}" }) }}
+>
+    {% block content %}{% endblock %}
+    <div class="bg-{{ color }} h-0.5 w-0 group-hover:w-full transition-all duration-400"></div>
+</a>

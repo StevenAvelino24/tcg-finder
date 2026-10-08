@@ -1,0 +1,23 @@
+{% set baseClasses = 'w-full rounded-4xl py-2 px-4 transition-colors duration-400 hover:cursor-pointer' %}
+{% set variantClasses = {
+    primary: 'bg-primary text-secondary hover:bg-secondary hover:text-primary',
+    secondary: 'bg-secondary text-white hover:bg-white hover:text-secondary',
+    accent: 'bg-accent text-secondary hover:bg-secondary hover:text-accent'
+} %}
+{% if type === 'link' %}
+    <a
+        href="{{ href }}"
+        {{ attributes.defaults({ class: baseClasses ~ ' ' ~ variantClasses[variant] }) }}
+    >
+{% else %}
+    <button
+        type="{{ type }}"
+        {{ attributes.defaults({ class: baseClasses ~ ' ' ~ variantClasses[variant] }) }}
+    >
+{% endif %}
+    {% block content %}{% endblock %}
+{% if type === 'link' %}
+    </a>
+{% else %}
+    </button>
+{% endif %}
