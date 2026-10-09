@@ -12,12 +12,12 @@ final class Button
     public ?string $classes = null;
     public ?string $href = null;
 
-    public function mount(string $variant, string $type): void
+    public function mount(string $variant, string $type, ?string $classes = null): void
     {
         $allowedVariants = ['primary', 'secondary', 'accent'];
         $allowedTypes = ['button', 'submit', 'reset', 'link'];
 
-        if (in_array($variant, $allowedVariants, true)) {
+        if (!in_array($variant, $allowedVariants, true)) {
             throw new \InvalidArgumentException(sprintf('Invalid value for argument variant : %s', $variant));
         }
 
@@ -27,5 +27,6 @@ final class Button
 
         $this->variant = $variant;
         $this->type = $type;
+        $this->classes = $classes;
     }
 }

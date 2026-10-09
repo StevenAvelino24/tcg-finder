@@ -1,0 +1,33 @@
+<nav
+    id="mobile-menu-panel"
+    data-mobile-menu-target="panel"
+    data-open="false"
+    class="fixed inset-0 z-50 flex flex-col p-4 bg-gray-50 lg:hidden
+           invisible opacity-0 -translate-y-2
+           transition-[opacity,transform,visibility] duration-150 ease-in
+           data-[open=true]:visible data-[open=true]:opacity-100 data-[open=true]:translate-y-0
+           data-[open=true]:duration-200 data-[open=true]:ease-out"
+>
+    <div class="flex justify-end">
+        <button type="button" aria-label="{{ 'a11y.mobile_menu.close'|trans }}" data-action="mobile-menu#close">
+            <twig:ux:icon name="tabler:x" class="size-8" />
+        </button>
+    </div>
+
+    <div class="flex-1 flex flex-col items-center justify-center gap-6 mt-16">
+        <twig:atoms:link href="#" color="secondary" textSize="lg" data-action="mobile-menu#close" classes="">
+            {{ 'navigation.home'|trans }}
+        </twig:atoms:link>
+        <twig:atoms:link href="#" color="secondary" textSize="lg" data-action="mobile-menu#close" classes="">
+            {{ 'navigation.search'|trans }}
+        </twig:atoms:link>
+    </div>
+
+    <div class="flex flex-col gap-12 mt-16 items-center justify-center w-full border-t pb-8 pt-12 border-gray-300">
+        {% if not app.user %}
+            <twig:atoms:button type="link" variant="primary" href="#">
+                {{ 'header.login'|trans }}
+            </twig:atoms:button>
+        {% endif %}
+    </div>
+</nav>
