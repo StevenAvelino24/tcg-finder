@@ -23,13 +23,23 @@
             </li>
         </nav>
         <div class="flex items-center gap-4">
-            <twig:atoms:button
-                type="link"
-                variant="primary"
-                href="#"
-            >
-                {{ 'header.login'|trans }}
-            </twig:atoms:button>
+            {% if not app.user %}
+                <twig:atoms:button
+                    type="link"
+                    variant="primary"
+                    href="{{ path('auth_login') }}"
+                >
+                    {{ 'header.login'|trans }}
+                </twig:atoms:button>
+            {% else %}
+                <twig:atoms:button
+                    type="link"
+                    variant="accent"
+                    href="{{ path('auth_logout') }}"
+                >
+                    {{ 'header.logout'|trans }}
+                </twig:atoms:button>
+            {% endif %}
         </div>
     </div>
     <div

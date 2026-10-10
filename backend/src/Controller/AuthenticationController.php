@@ -26,8 +26,9 @@ use SymfonyCasts\Bundle\ResetPassword\ResetPasswordHelperInterface;
 use SymfonyCasts\Bundle\VerifyEmail\VerifyEmailHelperInterface;
 use SymfonyCasts\Bundle\ResetPassword\Exception\ResetPasswordExceptionInterface;
 use Symfony\Bridge\Doctrine\Attribute\MapEntity;
+use Symfony\Component\Security\Http\Authentication\AuthenticationUtils;
 
-#[Route('/api', name: 'auth_')]
+#[Route('/', name: 'auth_')]
 final class AuthenticationController extends AbstractController
 {
     public function __construct(
@@ -40,7 +41,37 @@ final class AuthenticationController extends AbstractController
         protected readonly ResetPasswordHelperInterface $resetPasswordHelper
     ) {}
 
-    #[Route('/admin/users', name: 'list', methods: ['GET'])]
+    #[Route(
+        path: [
+            'fr' => '/se-connecter',
+            'en' => '/login',
+            'it' => '/login',
+            'de' => '/login'
+        ],
+        name: 'login'
+    )]
+    public function login(AuthenticationUtils $authUtils): Response
+    {
+        $error = $authUtils->getLastAuthenticationError();
+
+        $lastUsername = $authUtils->getLastUsername();
+
+        return $this->render('auth/login.html.twig', [
+             'last_username' => $lastUsername,
+             'error'         => $error,
+        ]);
+    }
+
+    #[Route(
+        path: [
+            'fr' => '/admin/users',
+            'en' => '/admin/users',
+            'it' => '/admin/users',
+            'de' => '/admin/users',
+        ],
+        name: 'list',
+        methods: ['GET']
+    )]
     public function list(
         Request $request
     ): JsonResponse
@@ -69,7 +100,16 @@ final class AuthenticationController extends AbstractController
         );
     }
 
-    #[Route('/admin/users/delete/{id}', name: 'admin_delete', methods: ['DELETE'])]
+    #[Route(
+        path: [
+            'fr' => '/admin/users/delete/{id}',
+            'en' => '/admin/users/delete/{id}',
+            'it' => '/admin/users/delete/{id}',
+            'de' => '/admin/users/delete/{id}',
+        ],
+        name: 'admin_delete',
+        methods: ['DELETE']
+    )]
     public function adminDelete(
         #[MapEntity(mapping: ['id' => 'id'])] User $user,
     ): JsonResponse
@@ -80,7 +120,16 @@ final class AuthenticationController extends AbstractController
         return $this->json(null, Response::HTTP_NO_CONTENT);
     }
 
-    #[Route('/register', name: 'register', methods: ['POST'])]
+    #[Route(
+        path: [
+            'fr' => '/s-enregistrer',
+            'en' => '/register',
+            'it' => '/register',
+            'de' => '/register'
+        ],
+        name: 'register',
+        methods: ['POST']
+    )]
     public function register(
         #[MapRequestPayload()] CreateUserDTO $dto
     ): JsonResponse

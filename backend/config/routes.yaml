@@ -12,3 +12,11 @@ controllers:
         path: '../src/Controller/'
         namespace: App\Controller
     type: attribute
+
+auth_logout:
+    path:
+        fr: '/se-deconnecter'
+        en: '/logout'
+        it: '/logout'
+        de: '/logout'
+    methods: 'GET'
