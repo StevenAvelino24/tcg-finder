@@ -1,0 +1,47 @@
+{% extends 'form_div_layout.html.twig' %}
+
+{# Wrapper around label + widget + help + errors #}
+{% block form_row -%}
+    {%- set widget_attr = {} -%}
+    {%- if help is not empty -%}
+        {%- set widget_attr = {attr: {'aria-describedby': id ~ '_help'}} -%}
+    {%- endif -%}
+    <div{% with {attr: row_attr|merge({class: ('flex flex-col space-y-2 ' ~ row_attr.class|default(''))|trim})} %}{{ block('attributes') }}{% endwith %}>
+        {{- form_label(form) -}}
+        {{- form_widget(form, widget_attr) -}}
+        {{- form_help(form) -}}
+        {{- form_errors(form) -}}
+    </div>
+{%- endblock form_row %}
+
+{% block form_label -%}
+    {%- set label_attr = label_attr|merge({class: (label_attr.class|default('') ~ ' text-sm font-medium')|trim}) -%}
+    {{- parent() -}}
+{%- endblock form_label %}
+
+{% block form_widget_simple -%}
+    {%- set state = valid
+        ? ' focus:ring-primary'
+        : ' border-red-500 focus:ring-red-500' -%}
+    {%- set attr = attr|merge({class: (attr.class|default('') ~ ' w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 outline-none transition-all' ~ state)|trim}) -%}
+    {{- parent() -}}
+{%- endblock form_widget_simple %}
+
+{% block form_errors -%}
+    {%- if errors|length > 0 -%}
+        <ul class="text-sm text-red-500">
+            {%- for error in errors -%}
+                <li>{{ error.message }}</li>
+            {%- endfor -%}
+        </ul>
+    {%- endif -%}
+{%- endblock form_errors %}
+
+{# help text #}
+{% block form_help -%}
+    {%- if help is not empty -%}
+        <p id="{{ id }}_help" class="text-sm text-gray-500">{{ help }}</p>
+    {%- endif -%}
+{%- endblock form_help %}
+
+

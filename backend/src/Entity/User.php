@@ -9,6 +9,7 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Component\Validator\Constraints\Length;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\Table(name: '`users`')]
@@ -23,13 +24,13 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(length: 180, unique: true)]
     #[Assert\NotBlank(message: 'auth.email.not_blank')]
     #[Assert\Email(message: 'auth.email.wrong_format')]
+    #[Assert\Length(max: 180)]
     private string $email;
 
     #[ORM\Column(type: 'json')]
     private array $roles = [];
 
     #[ORM\Column]
-    #[Assert\NotBlank(message: 'auth.password.not_blank')]
     private string $password;
 
     #[ORM\OneToMany(
@@ -43,9 +44,11 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[ORM\Column]
     #[Assert\NotBlank(message: 'auth.first_name.not_blank')]
+    #[Assert\Length(min: 2, max: 100)]
     private string $firstName;
 
     #[ORM\Column(nullable: true)]
+    #[Assert\Length(min:2, max:100)]
     private ?string $lastName = null;
 
     #[ORM\Column(type: 'boolean')]

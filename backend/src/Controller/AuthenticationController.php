@@ -2,12 +2,12 @@
 
 namespace App\Controller;
 
-use App\DTO\User\CreateUserDTO;
 use App\DTO\User\DetailUserDTO;
 use App\DTO\User\ForgotPasswordDTO;
 use App\DTO\User\ResetPasswordDTO;
 use App\DTO\User\UpdateUserDTO;
 use App\Entity\User;
+use App\Form\RegistrationFormType;
 use App\Repository\UserRepository;
 use App\Service\User\UserServiceInterface;
 use Doctrine\ORM\EntityManagerInterface;
@@ -21,6 +21,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Mime\Address;
+use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Attribute\Route;
 use SymfonyCasts\Bundle\ResetPassword\ResetPasswordHelperInterface;
 use SymfonyCasts\Bundle\VerifyEmail\VerifyEmailHelperInterface;
@@ -38,7 +39,8 @@ final class AuthenticationController extends AbstractController
         protected readonly MailerInterface $mailer,
         protected readonly UserRepository $userRepository,
         protected readonly ParameterBagInterface $params,
-        protected readonly ResetPasswordHelperInterface $resetPasswordHelper
+        protected readonly ResetPasswordHelperInterface $resetPasswordHelper,
+        protected readonly UserPasswordHasherInterface $passwordHasher,
     ) {}
 
     #[Route(
@@ -128,53 +130,62 @@ final class AuthenticationController extends AbstractController
             'de' => '/register'
         ],
         name: 'register',
-        methods: ['POST']
     )]
-    public function register(
-        #[MapRequestPayload()] CreateUserDTO $dto
-    ): JsonResponse
+    public function register(Request $request): Response
     {
-        $user = $this->userService->createFromDTO($dto);
+        if ($this->getUser()) {
+            return $this->redirectToRoute('home');
+        }
 
-        $this->entityManager->persist($user);
-        $this->entityManager->flush();
+        $user = new User();
+        $form = $this->createForm(RegistrationFormType::class, $user);
+        $form->handleRequest($request);
 
-        $this->sendVerificationEmail($user->getId(), $user->getEmail());
+        if ($form->isSubmitted() && $form->isValid()) {
+            $user->setPassword($this->passwordHasher->hashPassword($user, $form->get('password')->getData()));
+            $user->setRoles(['ROLE_USER']);
 
-        return $this->json(
-            DetailUserDTO::fromEntity($user),
-            Response::HTTP_CREATED
-        );
+            $this->entityManager->persist($user);
+            $this->entityManager->flush();
+
+
+            $this->userService->sendVerificationEmail((string) $user->getId(), $user->getEmail());
+
+            $this->addFlash('success', 'register.flash.check_email');
+
+            return $this->redirectToRoute('auth_login');
+        }
+
+        return $this->render('auth/register.html.twig', ['form' => $form]);
     }
 
     #[Route('/verify_email', name: 'verify_email', methods: ['GET'])]
-    public function verifyEmail(Request $request): JsonResponse
+    public function verifyEmail(Request $request): Response
     {
         /** @var User **/
         $user = $this->userRepository->find($request->query->get('id'));
 
         if (!$user) {
-            return $this->json(null, Response::HTTP_NOT_FOUND);
-        }
-
-        if ($user->getIsVerified()) {
-            return $this->json(null, Response::HTTP_UNPROCESSABLE_ENTITY);
+            throw $this->createNotFoundException();
         }
 
         try {
             $this->verifyEmailHelper->validateEmailConfirmationFromRequest($request, (string) $user->getId(), $user->getEmail());
         } catch (Exception $e) {
-            return $this->json(['id' => $user->getId()], 400);
+            $this->addFlash('error', 'register.flash.verify_failed');
+            return $this->redirectToRoute('app_login');
         }
 
         $user->setIsVerified(true);
         $this->entityManager->flush();
 
-        return $this->json([], Response::HTTP_OK);
+        $this->addFlash('success', 'register.flash.verified');
+        
+        return $this->redirectToRoute('auth_login');
     }
 
     #[Route('/resend_verify_email', name: 'resend_verify_email', methods: ['GET'])]
-    public function resendVerifyEmail(Request $request): JsonResponse
+    public function resendVerifyEmail(Request $request): Response
     {
         $user = $this->userRepository->findOneBy(['email' => $request->query->getString('email')]);
 
@@ -186,9 +197,11 @@ final class AuthenticationController extends AbstractController
             return $this->json(null, Response::HTTP_OK);
         }
 
-        $this->sendVerificationEmail($user->getId(), $user->getEmail());
+        $this->userService->sendVerificationEmail($user->getId(), $user->getEmail());
 
-        return $this->json([], Response::HTTP_OK);
+        $this->addFlash('success', 'register.flash.verify_resent');
+
+        return $this->redirectToRoute('auth_login');
     }
 
     #[Route('/backend/user', name: 'update', methods: ['PUT'])]
@@ -214,18 +227,6 @@ final class AuthenticationController extends AbstractController
         $this->entityManager->flush();
 
         return $this->json(null, Response::HTTP_NO_CONTENT);
-    }
-
-    #[Route('/backend/user', name: 'show', methods: ['GET'])]
-    public function getAuthenticatedUser(): JsonResponse
-    {
-        /** @var User **/
-        $user = $this->getUser();
-
-        return $this->json(
-            DetailUserDTO::fromEntity($user),
-            Response::HTTP_OK
-        );
     }
 
     #[Route('/forgot_password', name: 'forgot_password', methods: ['POST'])]
@@ -276,28 +277,5 @@ final class AuthenticationController extends AbstractController
         $this->entityManager->flush();
 
         return $this->json([]);
-    }
-
-    protected function sendVerificationEmail(string $userId, string $userEmail)
-    {
-        $signatureComponents = $this->verifyEmailHelper->generateSignature(
-            'auth_verify_email',
-            $userId,
-            $userEmail,
-            ['id' => $userId]
-        );
-
-        $email = (new TemplatedEmail())
-            ->from(new Address('no-reply@tcg-finder.ch', 'TCG Finder'))
-            ->to((string) $userEmail)
-            ->subject('Please confirm your email')
-            ->htmlTemplate('emails/verify_email.html.twig')
-            ->context([
-                'userEmail' => $userEmail,
-                'signedUrl' => $this->params->get('app.frontend_url') . '/api/auth/verify_email?' . parse_url($signatureComponents->getSignedUrl(), PHP_URL_QUERY),
-                'resendUrl' => $this->params->get('app.frontend_url') . '/api/auth/resend_verify_email?email=' . $userEmail,
-            ]);
-
-        $this->mailer->send($email);
     }
 }

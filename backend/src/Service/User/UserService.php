@@ -2,52 +2,37 @@
 
 namespace App\Service\User;
 
-use App\DTO\User\CreateUserDTO;
-use App\DTO\User\UpdateUserDTO;
-use App\Entity\User;
-use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
+use Symfony\Component\Mailer\MailerInterface;
+use Symfony\Component\Mime\Address;
+use Symfony\Bridge\Twig\Mime\TemplatedEmail;
+use SymfonyCasts\Bundle\VerifyEmail\VerifyEmailHelperInterface;
 
 final class UserService implements UserServiceInterface
 {
     public function __construct(
-        private UserPasswordHasherInterface $passwordHasher
+        protected readonly VerifyEmailHelperInterface $verifyEmailHelper,
+        protected readonly MailerInterface $mailer,
     ) {}
 
-    public function createFromDTO(CreateUserDTO $dto): User
+    public function sendVerificationEmail(string $userId, string $userEmail): void
     {
-        $user = new User();
-        $user = $this->map($dto, $user);
-        $user->setRoles(['ROLE_USER']);
-
-        $hashedPassword = $this->passwordHasher->hashPassword(
-            $user,
-            $dto->password
+        $signatureComponents = $this->verifyEmailHelper->generateSignature(
+            'auth_verify_email',
+            $userId,
+            $userEmail,
+            ['id' => $userId]
         );
-        $user->setPassword($hashedPassword);
 
-        return $user;
-    }
+        $email = (new TemplatedEmail())
+            ->from(new Address('no-reply@tcg-finder.ch', 'TCG Finder'))
+            ->to((string) $userEmail)
+            ->subject('Please confirm your email')
+            ->htmlTemplate('emails/verify_email.html.twig')
+            ->context([
+                'userEmail' => $userEmail,
+                'signedUrl' => $signatureComponents->getSignedUrl(),
+            ]);
 
-    public function updateFromDTO(UpdateUserDTO $dto, User $user): User
-    {
-        return $this->map($dto, $user);
-    }
-
-    public function resetPassword(User $user, string $password): User
-    {
-        $hashedPassword = $this->passwordHasher->hashPassword($user, $password);
-        $user->setPassword($hashedPassword);
-
-        return $user;
-    }
-
-    private function map(CreateUserDTO|UpdateUserDTO $dto, User $user): User
-    {
-        $user
-            ->setEmail($dto->email)
-            ->setFirstName($dto->firstName)
-            ->setLastName($dto->lastName);
-
-        return $user;
+        $this->mailer->send($email);
     }
 }

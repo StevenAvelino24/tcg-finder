@@ -39,5 +39,18 @@
                 {{ 'login.form.submit'|trans }}
             </twig:atoms:button>
         </form>
+
+        <hr class="text-gray-300 max-w-lg mx-auto h-px my-12" />
+
+        <div class="max-w-md mx-auto flex justify-center">
+            <twig:atoms:link
+                href="{{ path('auth_register') }}"
+                color="primary"
+                textSize="lg"
+                classes=""
+            >
+                {{ 'register.link'|trans }}
+            </twig:atoms:link>
+        </div>
     </section>
 {% endblock %}
