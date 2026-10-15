@@ -42,7 +42,7 @@
 
         <hr class="text-gray-300 max-w-lg mx-auto h-px my-12" />
 
-        <div class="max-w-md mx-auto flex justify-center">
+        <div class="max-w-md mx-auto flex flex-col space-y-4 justify-center items-center">
             <twig:atoms:link
                 href="{{ path('auth_register') }}"
                 color="primary"
@@ -50,6 +50,15 @@
                 classes=""
             >
                 {{ 'register.link'|trans }}
+            </twig:atoms:link>
+
+            <twig:atoms:link
+                href="{{ path('auth_forgot_password') }}"
+                color="accent"
+                textSize="lg"
+                classes=""
+            >
+                {{ 'forgot_password.link'|trans }}
             </twig:atoms:link>
         </div>
     </section>

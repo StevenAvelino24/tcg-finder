@@ -3,35 +3,33 @@
 namespace App\Controller;
 
 use App\DTO\User\DetailUserDTO;
-use App\DTO\User\ForgotPasswordDTO;
-use App\DTO\User\ResetPasswordDTO;
-use App\DTO\User\UpdateUserDTO;
 use App\Entity\User;
-use App\Form\RegistrationFormType;
+use App\Form\Auth\ForgotPasswordFormType;
+use App\Form\Auth\RegistrationFormType;
+use App\Form\Auth\ResetPasswordFormType;
 use App\Repository\UserRepository;
 use App\Service\User\UserServiceInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Exception;
-use Symfony\Bridge\Twig\Mime\TemplatedEmail;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use Symfony\Component\Mailer\MailerInterface;
-use Symfony\Component\Mime\Address;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Attribute\Route;
 use SymfonyCasts\Bundle\ResetPassword\ResetPasswordHelperInterface;
 use SymfonyCasts\Bundle\VerifyEmail\VerifyEmailHelperInterface;
-use SymfonyCasts\Bundle\ResetPassword\Exception\ResetPasswordExceptionInterface;
 use Symfony\Bridge\Doctrine\Attribute\MapEntity;
 use Symfony\Component\Security\Http\Authentication\AuthenticationUtils;
+use SymfonyCasts\Bundle\ResetPassword\Controller\ResetPasswordControllerTrait;
 
 #[Route('/', name: 'auth_')]
 final class AuthenticationController extends AbstractController
 {
+    use ResetPasswordControllerTrait;
+
     public function __construct(
         protected readonly UserServiceInterface $userService,
         protected readonly EntityManagerInterface $entityManager,
@@ -148,7 +146,6 @@ final class AuthenticationController extends AbstractController
             $this->entityManager->persist($user);
             $this->entityManager->flush();
 
-
             $this->userService->sendVerificationEmail((string) $user->getId(), $user->getEmail());
 
             $this->addFlash('success', 'register.flash.check_email');
@@ -190,11 +187,13 @@ final class AuthenticationController extends AbstractController
         $user = $this->userRepository->findOneBy(['email' => $request->query->getString('email')]);
 
         if (!$user) {
-            return $this->json(null, Response::HTTP_OK);
+            $this->addFlash('success', 'register.flash.verify_resent');
+            return $this->redirectToRoute('auth_login');
         }
 
         if ($user->getIsVerified()) {
-            return $this->json(null, Response::HTTP_OK);
+            $this->addFlash('success', 'register.flash.verify_resent');
+            return $this->redirectToRoute('auth_login');
         }
 
         $this->userService->sendVerificationEmail($user->getId(), $user->getEmail());
@@ -202,22 +201,6 @@ final class AuthenticationController extends AbstractController
         $this->addFlash('success', 'register.flash.verify_resent');
 
         return $this->redirectToRoute('auth_login');
-    }
-
-    #[Route('/backend/user', name: 'update', methods: ['PUT'])]
-    public function update(
-        #[MapRequestPayload()] UpdateUserDTO $dto,
-    ): JsonResponse {
-        /** @var User **/
-        $user = $this->getUser();
-        $this->userService->updateFromDTO($dto, $user);
-
-        $this->entityManager->flush();
-
-        return $this->json(
-            DetailUserDTO::fromEntity($user),
-            Response::HTTP_OK
-        );
     }
 
     #[Route('/backend/user', name: 'delete', methods: ['DELETE'])]
@@ -229,53 +212,86 @@ final class AuthenticationController extends AbstractController
         return $this->json(null, Response::HTTP_NO_CONTENT);
     }
 
-    #[Route('/forgot_password', name: 'forgot_password', methods: ['POST'])]
-    public function forgotPassword(
-        #[MapRequestPayload()] ForgotPasswordDTO $dto,
-    ): JsonResponse {
-        $user = $this->userRepository->findOneBy(['email' => $dto->email]);
+    #[Route(
+        path: [
+            'fr' => '/mot-de-passe-oublie',
+            'en' => '/forgot-password',
+            'it' => '/forgot-password',
+            'de' => '/forgot-password'
+        ],
+        name: 'forgot_password'
+    )]
+    public function forgotPassword(Request $request): Response
+    {
+        $form = $this->createForm(ForgotPasswordFormType::class);
+        $form->handleRequest($request);
 
-        if (!$user) {
-            return $this->json([], Response::HTTP_OK);
+        if ($form->isSubmitted() && $form->isValid()) {
+            $user = $this->userRepository->findOneBy(['email' => $form->get('email')->getData()]);
+
+            if (!$user) {
+                $this->addFlash('success', 'auth.forgot_password.sent');
+
+                return $this->redirectToRoute('auth_login');
+            }
+
+            $this->userService->sendForgotPasswordEmail($user);
+
+            $this->addFlash('success', 'auth.forgot_password.sent');
+
+            return $this->redirectToRoute('auth_login');
         }
 
-        try {
-            $resetToken = $this->resetPasswordHelper->generateResetToken($user);
-        } catch (ResetPasswordExceptionInterface $e) {
-            return $this->json([], Response::HTTP_OK);
-        }
-
-        $email = (new TemplatedEmail())
-            ->from(new Address('no-reply@tcg-finder.ch', 'TCG Finder'))
-            ->to($user->getEmail())
-            ->subject('Reset your password')
-            ->htmlTemplate('emails/reset_password.html.twig')
-            ->context(['resetUrl' => $this->params->get('app.frontend_url') . '/reset_password?token=' . $resetToken->getToken(), 'expiresAt' => $resetToken->getExpiresAt()]);
-
-        $this->mailer->send($email);
-
-        return $this->json([], Response::HTTP_OK);
+        return $this->render('auth/forgot-password.html.twig', ['form' => $form]);
     }
 
-    #[Route('/reset_password', name: 'reset_password', methods: ['POST'])]
-    public function resetPassword(
-        #[MapRequestPayload()] ResetPasswordDTO $dto,
-    ) : JsonResponse {
-        $user = null;
+    #[Route(
+        path: [
+            'fr' => '/reset-mot-de-passe',
+            'en' => '/reset-password',
+            'it' => '/reset-password',
+            'de' => '/reset-password'
+        ],
+        name: 'reset_password'
+    )]
+    public function resetPassword(Request $request) : Response {
+        $queryToken = $request->query->getString('token');
+
+        if ($queryToken !== '') {
+            $this->storeTokenInSession($queryToken);
+
+            return $this->redirectToRoute('auth_reset_password');
+        }
+
+        $token = $this->getTokenFromSession();
+
+        if (!$token) {
+            throw $this->createNotFoundException('No reset password token found.');
+        }
 
         try {
-            $user = $this->resetPasswordHelper->validateTokenAndFetchUser($dto->token);
-        } catch (Exception $e) {
-            $this->json([], Response::HTTP_BAD_REQUEST);
+            $user = $this->resetPasswordHelper->validateTokenAndFetchUser($token);
+        } catch (ResetPasswordExceptionInterface) {
+            $this->addFlash('error', 'auth.reset_password.invalid_token');
+
+            $this->redirectToRoute('auth_forgot_password');
         }
 
-        if (!$user) {
-            return $this->json([], Response::HTTP_BAD_REQUEST);
+        $form = $this->createForm(ResetPasswordFormType::class);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            $this->resetPasswordHelper->removeResetRequest($token);
+
+            $user->setPassword($this->passwordHasher->hashPassword($user, $form->get('password')->getData()));
+            $this->entityManager->flush();
+
+            $this->cleanSessionAfterReset();
+            $this->addFlash('success', 'auth.reset_password.flash.success');
+
+            return $this->redirectToRoute('auth_login');
         }
 
-        $user = $this->userService->resetPassword($user, $dto->password);
-        $this->entityManager->flush();
-
-        return $this->json([]);
+        return $this->render('auth/reset-password.html.twig', ['form' => $form]);
     }
 }

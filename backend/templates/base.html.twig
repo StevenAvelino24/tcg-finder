@@ -12,14 +12,15 @@
         <div class="min-h-screen flex flex-col text-primary-text bg-gray-50">
             {{ include('components/organisms/header.html.twig') }}
             <main class="grow">
-                {% for type, messages in app.flashes %}
-                    {% for message in messages %}
-                        <div class="p-3 rounded-md {{ type == 'success' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600' }}">
-                            {{ message|trans }}
-                        </div>
-                    {% endfor %}
-                {% endfor %}
                 <div class="container mx-auto px-4 py-8 sm:px-6 lg:px-8 max-w-7xl">
+                    {% for type, messages in app.flashes %}
+                        {% for message in messages %}
+                            <div class="p-4 mb-4 rounded-md w-full {{ type == 'success' ? 'bg-green-200 text-green-600' : 'bg-red-200 text-red-600' }}">
+                                {{ message|trans }}
+                            </div>
+                        {% endfor %}
+                    {% endfor %}
+
                     {% block main %}
                     {% endblock %}
                 </div>
