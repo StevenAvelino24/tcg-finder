@@ -1,23 +1,23 @@
 ###> symfony/framework-bundle ###
-/.env
-/.env.local
-/.env.local.php
-/.env.*.local
-/config/secrets/prod/prod.decrypt.private.php
-/public/bundles/
-/var/
-/vendor/
+.env
+.env.local
+.env.local.php
+.env.*.local
+config/secrets/prod/prod.decrypt.private.php
+public/bundles/
+var/
+vendor/
 ###< symfony/framework-bundle ###
 ###> liip/imagine-bundle ###
-/public/media/cache/
+public/media/cache/
 ###< liip/imagine-bundle ###
 
 ###> phpunit/phpunit ###
-/phpunit.xml
-/.phpunit.cache/
+phpunit.xml
+.phpunit.cache/
 ###< phpunit/phpunit ###
 
 ###> symfony/asset-mapper ###
-/public/assets/
-/assets/vendor/
+public/assets/
+assets/vendor/
 ###< symfony/asset-mapper ###
