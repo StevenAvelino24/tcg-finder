@@ -12,7 +12,7 @@
         {% endif %}
         <form class="max-w-md mx-auto space-y-6 p-6 bg-white rounded-xl shadow-md border border-primary" action="{{ path('auth_login') }}" method="post">
             <div class="flex flex-col space-y-2">
-                <label for="username">{{ 'login.form.username'|trans }}</label>
+                <label for="username" class="text-sm font-medium">{{ 'login.form.username'|trans }}</label>
                 <input
                     type="email"
                     id="username"
@@ -22,7 +22,7 @@
                 />
             </div>
             <div class="flex flex-col space-y-2">
-                <label for="password">{{ 'login.form.password'|trans }}</label>
+                <label for="password" class="text-sm font-medium">{{ 'login.form.password'|trans }}</label>
                 <input
                     type="password"
                     id="password"
@@ -32,34 +32,32 @@
                 />
             </div>
             <input type="hidden" name="_csrf_token" data-controller="csrf-protection" value="{{ csrf_token('authenticate') }}">
-            <twig:atoms:button
+            <twig:Atoms:Button
                 type="submit"
                 variant="primary"
             >
                 {{ 'login.form.submit'|trans }}
-            </twig:atoms:button>
+            </twig:Atoms:Button>
         </form>
 
         <hr class="text-gray-300 max-w-lg mx-auto h-px my-12" />
 
         <div class="max-w-md mx-auto flex flex-col space-y-4 justify-center items-center">
-            <twig:atoms:link
+            <twig:Atoms:Link
                 href="{{ path('auth_register') }}"
                 color="primary"
                 textSize="lg"
-                classes=""
             >
                 {{ 'register.link'|trans }}
-            </twig:atoms:link>
+            </twig:Atoms:Link>
 
-            <twig:atoms:link
+            <twig:Atoms:Link
                 href="{{ path('auth_forgot_password') }}"
                 color="accent"
                 textSize="lg"
-                classes=""
             >
                 {{ 'forgot_password.link'|trans }}
-            </twig:atoms:link>
+            </twig:Atoms:Link>
         </div>
     </section>
 {% endblock %}

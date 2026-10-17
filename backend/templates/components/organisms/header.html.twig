@@ -2,43 +2,41 @@
     <div class="hidden lg:flex container mx-auto items-center justify-between px-4 py-6">
         <nav class="flex flex-row items-center gap-8" dir="ltr">
             <li class="list-none">
-                <twig:atoms:link
+                <twig:Atoms:Link
                     href="#"
                     color="accent"
                     textSize="lg"
-                    classes=""
                 >
                     {{ 'nav.home'|trans }}
-                </twig:atoms:link>
+                </twig:Atoms:Link>
             </li>
             <li class="list-none">
-                <twig:atoms:link
+                <twig:Atoms:Link
                     href="#"
                     color="accent"
                     textSize="lg"
-                    classes=""
                 >
                     {{ 'nav.search'|trans }}
-                </twig:atoms:link>
+                </twig:Atoms:Link>
             </li>
         </nav>
         <div class="flex items-center gap-4">
             {% if not app.user %}
-                <twig:atoms:button
+                <twig:Atoms:Button
                     type="link"
                     variant="primary"
                     href="{{ path('auth_login') }}"
                 >
                     {{ 'header.login'|trans }}
-                </twig:atoms:button>
+                </twig:Atoms:Button>
             {% else %}
-                <twig:atoms:button
+                <twig:Atoms:Button
                     type="link"
                     variant="accent"
                     href="{{ path('auth_logout') }}"
                 >
                     {{ 'header.logout'|trans }}
-                </twig:atoms:button>
+                </twig:Atoms:Button>
             {% endif %}
         </div>
     </div>

@@ -1,0 +1,23 @@
+{% set baseClasses = "w-full inline-flex items-center justify-between gap-2 px-3 py-2.5 text-sm font-medium bg-gray-50 border border-gray-400 rounded-md hover:cursor-pointer focus:border-primary" %}
+
+<div class="flex flex-col space-y-2">
+    <label for="{{ id }}" class="text-sm font-medium">{{ label }}</label>
+    <select
+        id="{{ id }}"
+        name="{{ name }}"
+        class="{{ baseClasses ~ ' ' ~ (classes|default('')) }}"
+        {{ attributes.without('id', 'name', 'label', 'placeholder', 'options', 'value', 'classes') }}
+    >
+        {% if placeholder|default(null) is not null %}
+            <option value="" disabled {{ value is null ? 'selected' : '' }}>{{ placeholder }}</option>
+        {% endif %}
+        {% for option in options %}
+            <option
+                value="{{ option.value }}"
+                {{ this.isSelected(option.value) ? 'selected' : '' }}
+            >
+                {{ option.label }}
+            </option>
+        {% endfor %}
+    </select>
+</div>

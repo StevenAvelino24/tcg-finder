@@ -2,7 +2,6 @@
 
 namespace App\Controller;
 
-use App\DTO\User\DetailUserDTO;
 use App\Entity\User;
 use App\Form\Auth\ForgotPasswordFormType;
 use App\Form\Auth\RegistrationFormType;
@@ -21,7 +20,6 @@ use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Attribute\Route;
 use SymfonyCasts\Bundle\ResetPassword\ResetPasswordHelperInterface;
 use SymfonyCasts\Bundle\VerifyEmail\VerifyEmailHelperInterface;
-use Symfony\Bridge\Doctrine\Attribute\MapEntity;
 use Symfony\Component\Security\Http\Authentication\AuthenticationUtils;
 use SymfonyCasts\Bundle\ResetPassword\Controller\ResetPasswordControllerTrait;
 
@@ -64,64 +62,6 @@ final class AuthenticationController extends AbstractController
 
     #[Route(
         path: [
-            'fr' => '/admin/users',
-            'en' => '/admin/users',
-            'it' => '/admin/users',
-            'de' => '/admin/users',
-        ],
-        name: 'list',
-        methods: ['GET']
-    )]
-    public function list(
-        Request $request
-    ): JsonResponse
-    {
-        $page = max(1, $request->query->getInt('page', 1));
-        $limit = min(100, max(1, $request->query->getInt('limit', 25)));
-        $search = $request->query->getString('search', '');
-        $verified = $request->query->getBoolean('verified', true);
-
-        $users = $this->userRepository->findSearchAndPaginated(
-            $page,
-            $limit,
-            $search === '' ? null : $search,
-            $verified
-        );
-
-        return $this->json(
-            [
-                'users' => array_map(
-                    fn (User $user) => DetailUserDTO::fromEntity($user),
-                    $users['data']
-                ),
-                'total' => $users['total'],
-            ],
-            Response::HTTP_OK
-        );
-    }
-
-    #[Route(
-        path: [
-            'fr' => '/admin/users/delete/{id}',
-            'en' => '/admin/users/delete/{id}',
-            'it' => '/admin/users/delete/{id}',
-            'de' => '/admin/users/delete/{id}',
-        ],
-        name: 'admin_delete',
-        methods: ['DELETE']
-    )]
-    public function adminDelete(
-        #[MapEntity(mapping: ['id' => 'id'])] User $user,
-    ): JsonResponse
-    {
-        $this->entityManager->remove($user);
-        $this->entityManager->flush();
-
-        return $this->json(null, Response::HTTP_NO_CONTENT);
-    }
-
-    #[Route(
-        path: [
             'fr' => '/s-enregistrer',
             'en' => '/register',
             'it' => '/register',
@@ -159,6 +99,10 @@ final class AuthenticationController extends AbstractController
     #[Route('/verify_email', name: 'verify_email', methods: ['GET'])]
     public function verifyEmail(Request $request): Response
     {
+        if ($this->getUser()) {
+            return $this->redirectToRoute('home');
+        }
+
         /** @var User **/
         $user = $this->userRepository->find($request->query->get('id'));
 
@@ -184,6 +128,10 @@ final class AuthenticationController extends AbstractController
     #[Route('/resend_verify_email', name: 'resend_verify_email', methods: ['GET'])]
     public function resendVerifyEmail(Request $request): Response
     {
+        if ($this->getUser()) {
+            return $this->redirectToRoute('home');
+        }
+
         $user = $this->userRepository->findOneBy(['email' => $request->query->getString('email')]);
 
         if (!$user) {
@@ -223,6 +171,10 @@ final class AuthenticationController extends AbstractController
     )]
     public function forgotPassword(Request $request): Response
     {
+        if ($this->getUser()) {
+            return $this->redirectToRoute('home');
+        }
+
         $form = $this->createForm(ForgotPasswordFormType::class);
         $form->handleRequest($request);
 
@@ -255,6 +207,10 @@ final class AuthenticationController extends AbstractController
         name: 'reset_password'
     )]
     public function resetPassword(Request $request) : Response {
+        if ($this->getUser()) {
+            return $this->redirectToRoute('home');
+        }
+
         $queryToken = $request->query->getString('token');
 
         if ($queryToken !== '') {

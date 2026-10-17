@@ -7,13 +7,13 @@
 {% if type === 'link' %}
     <a
         href="{{ href }}"
-        class="{{ baseClasses ~ ' ' ~ variantClasses[variant] }}"
+        class="{{ baseClasses ~ ' ' ~ variantClasses[variant] ~ ' ' ~ classes|default('') }}"
         {{ attributes.without('type', 'href', 'variant', 'classes') }}
     >
 {% else %}
     <button
         type="{{ type }}"
-        class="{{ baseClasses ~ ' ' ~ variantClasses[variant] }}"
+        class="{{ baseClasses ~ ' ' ~ variantClasses[variant] ~ ' ' ~ classes|default('') }}"
         {{ attributes.without('type', 'href', 'variant', 'classes') }}
     >
 {% endif %}

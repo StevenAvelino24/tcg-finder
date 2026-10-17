@@ -1,0 +1,17 @@
+<table
+    class="{{ 'w-full text-center' ~ ' ' ~ classes|default('') }}"
+    {{ attributes.without('classes', 'headings') }}
+>
+    <thead class="border-b border-primary">
+        <tr>
+            {% for heading in headings %}
+                <th scope="col" class="pb-4">
+                    {{ heading }}
+                </th>
+            {% endfor %}
+        </tr>
+    </thead>
+    <tbody>
+        {% block content %}{% endblock %}
+    </tbody>
+</table>

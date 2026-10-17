@@ -1,0 +1,97 @@
+{% extends 'base.html.twig' %}
+
+{% block main %}
+    <section class="space-y-8">
+        <div class="max-w-md mx-auto text-center mb-16">
+            <h1 class="text-3xl font-bold">{{ 'admin.users.list.title'|trans }}</h1>
+        </div>
+
+        <div>
+            <form method="get" action="{{ path('admin_users_list') }}" class="flex flex-row gap-12 items-center">
+                <div class="flex flex-col space-y-2 flex-5">
+                    <label for="search" class="text-sm font-medium">{{ 'admin.users.filters.search'|trans }}</label>
+                    <input
+                        type="text"
+                        id="search"
+                        name="search"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 outline-none transition-all focus:ring-primary"
+                        value="{{ search }}"
+                    />
+                </div>
+
+                <div class="flex flex-col flex-5">
+                    <twig:Atoms:Select
+                        id="verified"
+                        name="verified"
+                        label="{{ 'admin.users.filters.verified'|trans }}"
+                        :options="[
+                            { label: 'admin.users.filters.verified.true'|trans, value: 1 },
+                            { label: 'admin.users.filters.verified.false'|trans, value: 0 },
+                        ]"
+                        value="{{ verified }}"
+                    />
+                </div>
+
+                <twig:Atoms:Button
+                    type="submit"
+                    variant="primary"
+                    classes="flex-2 h-[50%]"
+                >
+                    {{ 'admin.users.filters.submit'|trans }}
+                </twig:Atoms:Button>
+            </form>
+        </div>
+
+        <twig:Molecules:Table
+            :headings="[
+                'id',
+                'Email',
+                'First name',
+                'Last name',
+                'Shops',
+                'Is verified',
+                'Actions',
+            ]"
+            classes="mt-16 mb-16"
+        >
+            {% for user in users %}
+                <tr class="border-b border-secondary">
+                    <th scope="row" class="py-4">{{ user.id }}</th>
+                    <td>{{ user.email }}</td>
+                    <td>{{ user.firstName }}</td>
+                    <td>{{ user.lastName }}</td>
+                    <td>
+                        {% if user.shops|length > 0 %}
+                            {{ user.shops|map(shop => shop.title)|join(', ') }}
+                        {% endif %}
+                    </td>
+                    <td>{{ user.isVerified ? 'Yes' : 'No' }}</td>
+                    <td>
+                        <form
+                            method="post"
+                            action="{{ path('admin_users_delete', { id: user.id }) }}"
+                            onsubmit="return confirm('{{ 'admin.users.delete_confirm'|trans }}')"
+                        >
+                            <input type="hidden" name="_token" value="{{ csrf_token('delete-user-' ~ user.id) }}">
+                            <twig:Atoms:Button type="submit" variant="accent">
+                                {{ 'admin.users.delete'|trans }}
+                            </twig:Atoms:Button>
+                        </form>
+                    </td>
+                </tr>       
+            {% endfor %}
+        </twig:Molecules:Table>
+
+        <twig:Molecules:Pagination
+                :page="page"
+                :limit="limit"
+                :total="total"
+                route="admin_users_list"
+                :routeParams="{ search: search, verified: verified }"
+            />
+
+        {% if total > limit %}
+            
+        {% endif %}
+    </section>
+{% endblock %}
