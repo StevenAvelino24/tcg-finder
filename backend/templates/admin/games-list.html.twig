@@ -1,0 +1,51 @@
+{% extends 'base.html.twig' %}
+
+{% block main %}
+    <section class="space-y-8">
+        <div class="max-w-md mx-auto text-center mb-16">
+            <h1 class="text-3xl font-bold">{{ 'admin.games.list.title'|trans }}</h1>
+        </div>
+
+        {{ form_start(form, { attr: { class: 'flex flex-row gap-12 items-center w-[40%] items-end', novalidate: 'novalidate' } }) }}
+            {{ form_errors(form) }}
+
+            {{ form_row(form.name) }}
+
+            <twig:Atoms:Button
+                type="submit"
+                variant="primary"
+                classes="flex-3"
+            >
+                {{ 'games.form.add'|trans }}
+            </twig:Atoms:Button>
+        {{ form_end(form) }}
+
+        <twig:Molecules:Table
+            :headings="[
+                'id',
+                'Name',
+                'Actions',
+            ]"
+            classes="mt-16"
+        >
+            {% for game in games %}
+                <tr class="border-b border-secondary">
+                    <th scope="row" class="py-4">{{ game.id }}</th>
+                    <td>{{ game.name }}</td>
+                    <td>
+                        <form
+                            method="post"
+                            action="{{ path('games_delete', { id: game.id }) }}"
+                            onsubmit="return confirm('{{ 'admin.games.delete_confirm'|trans }}')"
+                        >
+                            <input type="hidden" name="_token" value="{{ csrf_token('delete-game-' ~ game.id) }}">
+                            <twig:Atoms:Button type="submit" variant="accent">
+                                {{ 'admin.games.delete'|trans }}
+                            </twig:Atoms:Button>
+                        </form>
+                    </td>
+                </tr>
+            {% endfor %}
+        </twig:Molecules:Table>
+    </section>
+{% endblock %}

@@ -2,71 +2,65 @@
 
 namespace App\Controller;
 
-use App\DTO\Game\CreateGameDTO;
-use App\DTO\Game\DetailGameDTO;
 use App\Entity\Game;
+use App\Form\Game\CreateGameFormType;
 use App\Repository\GameRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Bridge\Doctrine\Attribute\MapEntity;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
-#[Route('/api', name: 'games_')]
+#[Route('/admin', name: 'games_')]
 final class GameController extends AbstractController
 {
-    #[Route('/games', name: 'list', methods: ['GET'])]
-    public function list(GameRepository $gameRepository): JsonResponse
-    {
-        return $this->json(
-            array_map(
-                fn (Game $game) => DetailGameDTO::fromEntity($game),
-                $gameRepository->findAll()
-            ),
-            Response::HTTP_OK,
-        );
-    }
-
-    #[Route('/admin/games', name: 'create', methods: ['POST'])]
-    public function create(
-        #[MapRequestPayload()] CreateGameDTO $dto,
-        EntityManagerInterface $entityManager
-    ): JsonResponse {
-        $game = new Game();
-        $game->setName($dto->name);
-
-        $entityManager->persist($game);
-        $entityManager->flush();
-
-        return $this->json(
-            DetailGameDTO::fromEntity($game),
-            Response::HTTP_CREATED
-        );
-    }
-
-    #[Route('/admin/games/{id}', name: 'update', methods: ['PUT'])]
-    public function update(
-        Game $game,
-        #[MapRequestPayload()] CreateGameDTO $dto,
+    #[Route('/games', name: 'list', methods: ['GET', 'POST'])]
+    #[IsGranted('ROLE_ADMIN')]
+    public function list(
+        Request $request,
+        GameRepository $gameRepository,
         EntityManagerInterface $entityManager,
-    ): JsonResponse {
-        $game->setName($dto->name);
+    ): Response
+    {
+        $game = new Game();
+        $form = $this->createForm(CreateGameFormType::class, $game);
+        $form->handleRequest($request);
 
-        $entityManager->flush();
+        if ($form->isSubmitted() && $form->isValid()) {
+            $game->setName($form->get('name')->getData());
 
-        return $this->json(
-            DetailGameDTO::fromEntity($game),
-            Response::HTTP_OK
-        );
+            $entityManager->persist($game);
+            $entityManager->flush();
+
+            $this->addFlash('success', 'games.added');
+
+            $this->redirectToRoute('games_list');
+        }
+
+        return $this->render('admin/games-list.html.twig', [
+            'games' => $gameRepository->findAll(),
+            'form' => $form,
+        ]);
     }
 
-    #[Route('/admin/games/{id}', name: 'delete', methods: ['DELETE'])]
-    public function delete(Game $game, EntityManagerInterface $entityManager): JsonResponse
+    #[Route('/games/{id}', name: 'delete', methods: ['POST'])]
+    public function delete(
+        Request $request,
+        #[MapEntity(mapping: ['id' => 'id'])] Game $game,
+        EntityManagerInterface $entityManager,
+    ): Response
     {
+        if (!$this->isCsrfTokenValid('delete-game-' . $game->getId(), $request->getPayload()->getString('_token'))) {
+            throw $this->createAccessDeniedException();
+        }
+
         $entityManager->remove($game);
         $entityManager->flush();
 
-        return $this->json(null, Response::HTTP_NO_CONTENT);
+        $this->addFlash('success', 'admin.games.deleted');
+
+        return $this->redirectToRoute('games_list');
     }
 }

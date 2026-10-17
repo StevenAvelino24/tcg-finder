@@ -68,6 +68,7 @@ final class AuthenticationController extends AbstractController
             'de' => '/register'
         ],
         name: 'register',
+        methods: ['GET', 'POST']
     )]
     public function register(Request $request): Response
     {
@@ -167,7 +168,8 @@ final class AuthenticationController extends AbstractController
             'it' => '/forgot-password',
             'de' => '/forgot-password'
         ],
-        name: 'forgot_password'
+        name: 'forgot_password',
+        methods: ['GET', 'POST']
     )]
     public function forgotPassword(Request $request): Response
     {
@@ -204,7 +206,8 @@ final class AuthenticationController extends AbstractController
             'it' => '/reset-password',
             'de' => '/reset-password'
         ],
-        name: 'reset_password'
+        name: 'reset_password',
+        methods: ['GET', 'POST']
     )]
     public function resetPassword(Request $request) : Response {
         if ($this->getUser()) {
