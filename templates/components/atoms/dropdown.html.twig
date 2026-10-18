@@ -1,0 +1,44 @@
+{% set baseClasses = 'hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-primary bg-gray-100 hover:cursor-pointer' %}
+{% set contentClasses = {
+    label: 'w-full px-4 py-2 text-left rounded-md',
+    icon: 'p-1 rounded-full',
+} %}
+
+<div
+    class="relative {{ classes|default('') }}"
+    data-controller="dropdown"
+    data-action="keydown.esc@window->dropdown#handleKeydown"
+>
+    <button
+        data-action="dropdown#toggle"
+        data-dropdown-target="button"
+        id="{{ id }}"
+        class="{{ baseClasses ~ ' ' ~ contentClasses[icon|default(null) ? 'icon' : 'label'] }}"
+        aria-haspopup="true"
+        aria-expanded="false"
+    >
+        {% if label|default(null) is not null %}
+            {{ label }}
+
+            <twig:ux:icon name="tabler:chevron-down" class="inline-block w-4 h-4 ml-2" />
+        {% elseif icon|default(null) is not null %}
+            <twig:ux:icon name="tabler:{{ icon }}" class="w-8 h-8 text-primary" />
+        {% endif %}
+    </button>
+
+    <div
+        data-dropdown-target="menu"
+        data-action="click@window->dropdown#handleClickOutside"
+        id="dropdown-{{ id }}"
+        class="hidden absolute z-50 border border-gray-200 mt-1 bg-white rounded-md shadow-lg py-1"
+    >
+        {% for item in items %}
+            <a
+                href="{{ item.url }}"
+                class="block px-4 py-2 text-sm hover:text-primary"
+            >
+                {{ item.label }}
+            </a>
+        {% endfor %}
+    </div>
+</div>

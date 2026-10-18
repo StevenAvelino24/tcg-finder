@@ -30,13 +30,13 @@
                     {{ 'header.login'|trans }}
                 </twig:Atoms:Button>
             {% else %}
-                <twig:Atoms:Button
-                    type="link"
-                    variant="accent"
-                    href="{{ path('auth_logout') }}"
-                >
-                    {{ 'header.logout'|trans }}
-                </twig:Atoms:Button>
+                <twig:Atoms:Dropdown
+                    id="profile"
+                    icon="user-circle"
+                    :items="[
+                        { label: 'profile.logout'|trans, url: path('auth_logout') }
+                    ]"
+                />
             {% endif %}
         </div>
     </div>

@@ -30,8 +30,7 @@ services:
       FRANKENPHP_CONFIG: |
         worker {
           file /app/public/index.php
-          watch /app/src/**/*.php
-          watch /app/config/**/*.yaml
+          watch /app
         }
     healthcheck:
       test: ['CMD', 'curl', '-f', 'http://127.0.0.1']
